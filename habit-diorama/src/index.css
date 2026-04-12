@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
+
+:root {
+  --primary-color: #ff7b54;
+  --secondary-color: #ffb26b;
+  --bg-color: #ffd56b;
+  --text-main: #3d3b3c;
+  --white: #ffffff;
+  --success: #4ade80;
+  --font-family: 'M PLUS Rounded 1c', 'Nunito', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background: linear-gradient(135deg, #ffd56b 0%, #ffb26b 100%);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* スマホ等でのタップハイライトを削除 */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}

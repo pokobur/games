@@ -1,0 +1,1238 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ナビゲーション */
+.global-nav {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-btn {
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 50px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  color: var(--white);
+}
+
+.play-btn {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+  color: #d12e6d;
+}
+
+.parent-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.nav-btn:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ホーム画面 */
+.home-screen {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  margin-top: 40px;
+}
+
+.home-screen h1 {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 0px rgba(255, 255, 255, 1);
+}
+
+/* =====================================================
+   子供用プレイ画面
+   ===================================================== */
+.playroom-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.task-list {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 24px;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(255, 123, 84, 0.15);
+  border: 4px solid #fff;
+}
+
+.task-list h2 {
+  color: var(--primary-color);
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2rem;
+}
+
+.empty-tasks {
+  text-align: center;
+  padding: 30px;
+  color: #999;
+  font-size: 1.1rem;
+  line-height: 2;
+}
+
+.task-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+}
+
+.task-btn {
+  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+  border: 4px solid #fff;
+  color: #1e4d3b;
+  font-size: 1.3rem;
+  font-weight: 900;
+  padding: 16px 28px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 6px 0 #5fb08a, 0 15px 20px rgba(0,0,0,0.1);
+  font-family: inherit;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-btn-emoji {
+  font-size: 1.6rem;
+}
+
+.task-btn:hover:not(:disabled) {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 0 #5fb08a, 0 20px 25px rgba(0,0,0,0.15);
+}
+
+.task-btn:active:not(:disabled) {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 #5fb08a, 0 5px 10px rgba(0,0,0,0.1);
+}
+
+.task-btn.completed {
+  background: #e0e0e0;
+  color: #9e9e9e;
+  border-color: #f5f5f5;
+  box-shadow: none;
+  transform: translateY(6px);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 完了済みセクション */
+.finished-section {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.finished-section h3 {
+  color: #27ae60;
+  margin-bottom: 10px;
+}
+
+.finished-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.finished-badge {
+  background: linear-gradient(135deg, #d4efdf, #a9dfbf);
+  color: #1e8449;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: line-through;
+}
+
+/* インベントリバー */
+.inventory-bar {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 16px 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border: 3px solid #ffd56b;
+}
+
+.inventory-bar h3 {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.inventory-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inventory-item {
+  font-size: 2rem;
+  background: rgba(255, 213, 107, 0.3);
+  padding: 6px;
+  border-radius: 12px;
+  cursor: default;
+  transition: transform 0.2s;
+}
+
+.inventory-item:hover {
+  transform: scale(1.2);
+}
+
+/* ジオラマエリア */
+.diorama-area {
+  text-align: center;
+}
+
+.diorama-area h2 {
+  color: var(--text-main);
+  margin-bottom: 16px;
+  font-size: 1.5rem;
+}
+
+/* Phaser Container */
+.phaser-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  filter: drop-shadow(0 15px 25px rgba(0,0,0,0.15));
+}
+
+/* =====================================================
+   ガチャモーダル
+   ===================================================== */
+.gacha-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.gacha-modal {
+  background: linear-gradient(145deg, #fff8e1, #fff3cd);
+  border-radius: 30px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  border: 6px solid #ffd700;
+  max-width: 380px;
+  width: 90%;
+  animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.gacha-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #e67e22;
+  margin-bottom: 24px;
+  text-shadow: 2px 2px 0 #fff;
+}
+
+.gacha-display {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, #ffffff, #f0f0f0);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 4px 12px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.1);
+  border: 4px solid #ffd700;
+}
+
+.gacha-display.spinning {
+  animation: gachaSpin 0.2s ease-in-out infinite;
+}
+
+.gacha-display.reveal {
+  animation: gachaReveal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-color: #ff6b6b;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), inset 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.gacha-emoji {
+  font-size: 3.5rem;
+}
+
+.gacha-result-info {
+  animation: fadeSlideUp 0.5s ease;
+}
+
+.gacha-result-name {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--text-main);
+  margin-bottom: 20px;
+  line-height: 1.8;
+}
+
+.rarity-stars {
+  font-size: 1.6rem;
+}
+
+.gacha-collect-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  border: none;
+  padding: 14px 36px;
+  border-radius: 50px;
+  font-size: 1.3rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 6px 0 #c0392b, 0 10px 20px rgba(0,0,0,0.15);
+  font-family: inherit;
+}
+
+.gacha-collect-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 #c0392b, 0 15px 25px rgba(0,0,0,0.2);
+}
+
+.gacha-collect-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #c0392b;
+}
+
+.gacha-spinning-text {
+  font-size: 1.3rem;
+  color: #e67e22;
+  font-weight: 700;
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}
+
+/* =====================================================
+   タスク完了エフェクト
+   ===================================================== */
+.task-complete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti-particle {
+  position: absolute;
+  top: -20px;
+  animation: confettiFall var(--duration, 2s) ease-out forwards;
+  animation-delay: var(--delay, 0s);
+  pointer-events: none;
+}
+
+.complete-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  animation: completePopIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.complete-emoji {
+  font-size: 5rem;
+  animation: completeBounce 0.8s ease infinite alternate;
+}
+
+.complete-title {
+  font-size: 3rem;
+  color: white;
+  text-shadow: 3px 3px 0 #e74c3c, -1px -1px 0 #e74c3c, 1px -1px 0 #e74c3c, -1px 1px 0 #e74c3c;
+  margin: 10px 0;
+}
+
+.complete-task-name {
+  font-size: 1.3rem;
+  color: white;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  font-weight: 700;
+}
+
+/* =====================================================
+   親用ダッシュボード
+   ===================================================== */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dashboard-container > h2 {
+  color: var(--text-main);
+  text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
+  margin-bottom: 0;
+  font-size: 2rem;
+  background: rgba(255,255,255,0.7);
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 12px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 20px;
+  border-top: none;
+}
+
+.stat-emoji {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--primary-color);
+}
+
+.stat-label {
+  font-size: 0.95rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* タスク管理セクション */
+.task-manager-section {
+  background: rgba(255,255,255,0.6);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h3 {
+  font-size: 1.4rem;
+  color: var(--text-main);
+}
+
+.add-btn {
+  border-radius: 50px;
+  font-size: 0.95rem;
+}
+
+/* タスクフォーム */
+.task-form {
+  margin-bottom: 20px;
+  padding: 20px;
+  border-top: 4px solid var(--secondary-color);
+  animation: fadeSlideUp 0.3s ease;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 3px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--primary-color);
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 3px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  background: white;
+  cursor: pointer;
+}
+
+.form-select:focus {
+  border-color: var(--primary-color);
+}
+
+.form-range {
+  width: 100%;
+  margin-top: 8px;
+  accent-color: var(--primary-color);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.secondary-btn {
+  background: #e0e0e0;
+  color: #666;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.secondary-btn:hover {
+  background: #d0d0d0;
+}
+
+/* タスク一覧（管理画面） */
+.task-list-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-top: none;
+  border-left: 5px solid var(--primary-color);
+  transition: all 0.2s;
+}
+
+.task-item:hover {
+  transform: translateX(4px);
+}
+
+.task-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.task-category-badge {
+  background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+  color: #b7791f;
+  padding: 3px 10px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.task-item-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.task-difficulty {
+  font-size: 0.85rem;
+}
+
+.task-item-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.icon-btn {
+  background: none;
+  border: 2px solid transparent;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+}
+
+.edit-btn:hover {
+  background: #eaf2ff;
+  border-color: #3498db;
+}
+
+.delete-btn:hover {
+  background: #ffeaea;
+  border-color: #e74c3c;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 30px;
+  color: #999;
+  border-top: none;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+/* カード共通 */
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  border-top: 6px solid var(--primary-color);
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.card h3 {
+  color: var(--text-main);
+  margin-bottom: 12px;
+  font-size: 1.3rem;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 8px;
+}
+
+.card p {
+  color: #666;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.primary-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.primary-btn:hover {
+  background: var(--secondary-color);
+  transform: translateY(-2px);
+}
+
+/* 収益化エリア */
+.monetization-area {
+  border-top-color: #3498db;
+}
+
+.monetization-area a {
+  color: #2980b9;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.monetization-area a:hover {
+  text-decoration: underline;
+}
+
+/* =====================================================
+   アニメーション
+   ===================================================== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes gachaSpin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes gachaReveal {
+  0% { transform: scale(0.5) rotate(-10deg); }
+  50% { transform: scale(1.3) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) translateX(var(--drift, 0px)) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes completePopIn {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  60% { transform: translate(-50%, -50%) scale(1.2); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+@keyframes completeBounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-15px); }
+}
+
+/* =====================================================
+   レスポンシブ
+   ===================================================== */
+@media (max-width: 768px) {
+  .global-nav {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .nav-btn {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .task-btn {
+    font-size: 1.1rem;
+    padding: 14px 22px;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .gacha-modal {
+    padding: 30px 20px;
+  }
+
+  .complete-title {
+    font-size: 2.2rem;
+  }
+
+  .inventory-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* =====================================================
+   PIN / アクセス制御画面
+   ===================================================== */
+.pin-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.pin-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 48px 40px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  max-width: 380px;
+  width: 90%;
+}
+
+.pin-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.pin-card h2 {
+  color: var(--text-main);
+  margin-bottom: 8px;
+  font-size: 1.5rem;
+}
+
+.pin-card > p {
+  color: #888;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+}
+
+.pin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pin-input {
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: 12px;
+  padding: 14px;
+  border: 3px solid #e0e0e0;
+  border-radius: 12px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.pin-input:focus {
+  border-color: #667eea;
+}
+
+.pin-error {
+  color: #e74c3c;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.pin-submit {
+  padding: 12px;
+  font-size: 1.1rem;
+  border-radius: 12px;
+}
+
+.pin-hint {
+  color: #bbb;
+  font-size: 0.8rem;
+  margin-top: 20px;
+}
+
+/* ダッシュボードヘッダー */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.7);
+  padding: 12px 24px;
+  border-radius: 12px;
+}
+
+.dashboard-header h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.section-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.task-done {
+  opacity: 0.6;
+}
+
+.task-done-badge {
+  background: #27ae60;
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* =====================================================
+   もちものパネル（子供用）
+   ===================================================== */
+.inventory-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 20px 24px;
+  box-shadow: 0 8px 24px rgba(255, 178, 107, 0.15);
+  border: 4px solid #ffd56b;
+}
+
+.inventory-panel h3 {
+  margin-bottom: 16px;
+  font-size: 1.3rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inventory-count {
+  background: var(--primary-color);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+}
+
+.inventory-empty {
+  color: #999;
+  text-align: center;
+  padding: 16px;
+  font-size: 1rem;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.inventory-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: 16px;
+  border: 3px solid #e8e8e8;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.inventory-slot:hover {
+  border-color: #ffd56b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.inventory-slot.selected {
+  border-color: #ff7b54;
+  background: linear-gradient(135deg, #fff5ee, #ffe8d6);
+  box-shadow: 0 0 0 3px rgba(255, 123, 84, 0.3);
+  transform: scale(1.05);
+  animation: selectedPulse 1s ease-in-out infinite alternate;
+}
+
+.inventory-slot-emoji {
+  font-size: 2rem;
+}
+
+.inventory-slot-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #666;
+}
+
+/* 配置ヒント */
+.placement-hint {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  color: #e65100;
+  padding: 10px 20px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 12px;
+  animation: fadeSlideUp 0.3s ease;
+  border: 2px solid #ffd54f;
+}
+
+/* 操作ガイド */
+.diorama-help {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 10px;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+@keyframes selectedPulse {
+  from { box-shadow: 0 0 0 3px rgba(255, 123, 84, 0.2); }
+  to { box-shadow: 0 0 0 5px rgba(255, 123, 84, 0.4); }
+}
+
+/* =====================================================
+   承認システム
+   ===================================================== */
+.approval-section {
+  border: 3px solid #ff7043;
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  animation: fadeSlideUp 0.3s ease;
+}
+
+.approval-section h3 {
+  color: #e65100;
+  margin-bottom: 12px;
+}
+
+.approval-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.approval-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 14px 18px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.approval-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.approval-task-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.approval-time {
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.approval-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.approve-btn {
+  background: linear-gradient(135deg, #66bb6a, #43a047);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.approve-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(67, 160, 71, 0.3);
+}
+
+.reject-btn {
+  background: #f5f5f5;
+  color: #999;
+  border: 2px solid #e0e0e0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.reject-btn:hover {
+  background: #ffebee;
+  color: #e53935;
+  border-color: #ef9a9a;
+}
+
+.approval-toast {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  border: 2px solid #66bb6a;
+  color: #2e7d32;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-weight: 700;
+  text-align: center;
+  animation: fadeSlideUp 0.3s ease;
+  font-size: 1rem;
+}
+
+/* 承認待ちボタン（子ども用） */
+.task-btn-pending {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+  position: relative;
+}
+
+.task-btn-pending:hover {
+  transform: none !important;
+}
+
+.task-pending-badge {
+  display: block;
+  font-size: 0.75rem;
+  color: #ff9800;
+  font-weight: 700;
+  margin-top: 4px;
+  animation: pendingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pendingPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* =====================================================
+   PIN変更フォーム
+   ===================================================== */
+.pin-change-card {
+  background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+  border: 2px solid #7986cb;
+}
+
+.pin-change-card h3 {
+  margin-bottom: 12px;
+  color: #3949ab;
+}
+
+.pin-change-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pin-change-msg {
+  text-align: center;
+  padding: 10px;
+  color: #2e7d32;
+  font-weight: 700;
+  background: #e8f5e9;
+  border-radius: 8px;
+  animation: fadeSlideUp 0.3s ease;
+}
+
+/* ヘッダーアクション */
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* =====================================================
+   日々のきろく（進捗カレンダー）
+   ===================================================== */
+.progress-section {
+  border-top-color: #27ae60;
+}
+
+.daily-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.daily-log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f8fff9, #e8f5e9);
+  border-radius: 12px;
+  border-left: 4px solid #27ae60;
+}
+
+.daily-log-date {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #2e7d32;
+  width: 80px;
+}
+
+.daily-log-details {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.daily-log-count {
+  font-weight: 700;
+  color: #555;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.daily-log-stars {
+  font-size: 1rem;
+  letter-spacing: 2px;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

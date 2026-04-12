@@ -1,0 +1,74 @@
+name: Deploy Monorepo to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Prepare site directory
+        run: |
+          mkdir -p _site
+          # Copy static files/apps
+          cp -r AIzukan _site/
+          cp -r brainrot-game _site/
+          cp index.html _site/
+          # Ensure custom domain is preserved
+          echo "game.plyo.blog" > _site/CNAME
+
+      - name: Build battleship-study
+        run: |
+          cd battleship-study
+          npm ci || npm install
+          npm run build
+          cp -r dist ../_site/battleship-study/
+
+      - name: Build habit-diorama
+        run: |
+          cd habit-diorama
+          npm ci || npm install
+          npm run build
+          cp -r dist ../_site/habit-diorama/
+
+      - name: Build pixel-magic-adventurer
+        run: |
+          cd pixel-magic-adventurer
+          npm ci || npm install
+          npm run build
+          cp -r dist ../_site/pixel-magic-adventurer/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

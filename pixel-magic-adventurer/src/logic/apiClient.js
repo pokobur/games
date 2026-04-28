@@ -10,7 +10,7 @@ import { loadApiKey } from './storage.js';
  * 実行時に LocalStorage または 環境変数 から APIキー を取得する
  */
 function getApiKey() {
-  return loadApiKey() || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_IMAGE_API_KEY || '';
+  return loadApiKey() || '';
 }
 
 /**

@@ -37,6 +37,13 @@ npm run build
 cp -r dist ../_site/pixel-magic-adventurer
 cd ..
 
+echo "🌳 どうぶつステップ (animal-step) をビルド中..."
+cd animal-step
+npm install
+npm run build
+cp -r dist ../_site/animal-step
+cd ..
+
 echo "☁️ GitHubの gh-pages ブランチにプッシュしています..."
 # 元のリポジトリURLを取得
 REMOTE_URL=$(git config --get remote.origin.url)

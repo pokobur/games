@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>らくがき3Dしょうかん ✨ 魔法の3Dお絵かき</title>
+  <!-- Google Font Rounded -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- 効果音/BGM設定用スピーカーボタン -->
+  <button id="btn-sound-toggle" class="sound-toggle-btn" aria-label="おとをならす">🔊</button>
+
+  <!-- ==================== HOME SCREEN ==================== -->
+  <section id="screen-home" class="app-screen active">
+    <div class="logo-container">
+      <div class="sparkle-effect">✨</div>
+      <h1 class="main-title">
+        <ruby>らくがき<rt>らくがき</rt></ruby>3D<ruby>召喚<rt>しょうかん</rt></ruby>!
+      </h1>
+      <p class="subtitle">〜キミのえが3Dになってうごきだす！〜</p>
+    </div>
+    
+    <div class="home-buttons">
+      <button id="btn-start-drawing" class="btn-giant btn-primary">
+        🎨 <ruby>おえかき<rt>おえかき</rt></ruby>をはじめる
+      </button>
+      <button id="btn-goto-gallery" class="btn-giant btn-secondary">
+        🎁 <ruby>おもちゃ箱<rt>おもちゃばこ</rt></ruby>をみる
+      </button>
+    </div>
+  </section>
+
+  <!-- ==================== CANVAS SCREEN ==================== -->
+  <section id="screen-canvas" class="app-screen">
+    <div class="screen-header">
+      <button class="btn-back btn-small">🏠 <ruby>もどる<rt>もどる</rt></ruby></button>
+      <h2>🎨 <ruby>えをかこう<rt>えをかこう</rt></ruby></h2>
+    </div>
+
+    <!-- お絵かきエリア -->
+    <div class="canvas-container">
+      <canvas id="paint-canvas"></canvas>
+    </div>
+
+    <!-- ツールバー -->
+    <div class="canvas-toolbar">
+      <div class="tool-group">
+        <button id="tool-pen" class="tool-btn active" data-tool="pen">✏️ <ruby>ペン<rt>ぺん</rt></ruby></button>
+        <button id="tool-eraser" class="tool-btn" data-tool="eraser">🧽 <ruby>けしごむ<rt>けしごむ</rt></ruby></button>
+        <button id="tool-bucket" class="tool-btn" data-tool="bucket">🪣 <ruby>ぬりつぶし<rt>ぬりつぶし</rt></ruby></button>
+      </div>
+
+      <div class="brush-size-group">
+        <span><ruby>太さ<rt>ふとさ</rt></ruby>:</span>
+        <input type="range" id="brush-size" min="4" max="40" value="12">
+      </div>
+
+      <div class="utility-group">
+        <button id="btn-undo" class="tool-btn btn-util" title="もどす">↩️ <ruby>もどす<rt>もどす</rt></ruby></button>
+        <button id="btn-redo" class="tool-btn btn-util" title="すすむ">↪️ <ruby>すすむ<rt>すすむ</rt></ruby></button>
+        <label for="camera-import" class="tool-btn btn-util">
+          📸 <ruby>しゃしん<rt>しゃしん</rt></ruby>
+          <input type="file" id="camera-import" accept="image/*" style="display:none">
+        </label>
+        <button id="btn-clear-canvas" class="tool-btn btn-danger">🧹 <ruby>けす<rt>けす</rt></ruby></button>
+      </div>
+    </div>
+
+    <!-- カラーパレット -->
+    <div class="palette-container">
+      <!-- 厳選された16色 -->
+      <div class="color-swatch active" style="background-color: #ff3b30;" data-color="#ff3b30"></div>
+      <div class="color-swatch" style="background-color: #ff9500;" data-color="#ff9500"></div>
+      <div class="color-swatch" style="background-color: #ffcc00;" data-color="#ffcc00"></div>
+      <div class="color-swatch" style="background-color: #4cd964;" data-color="#4cd964"></div>
+      <div class="color-swatch" style="background-color: #5ac8fa;" data-color="#5ac8fa"></div>
+      <div class="color-swatch" style="background-color: #007aff;" data-color="#007aff"></div>
+      <div class="color-swatch" style="background-color: #5856d6;" data-color="#5856d6"></div>
+      <div class="color-swatch" style="background-color: #ff2d55;" data-color="#ff2d55"></div>
+      <div class="color-swatch" style="background-color: #ff9ccb;" data-color="#ff9ccb"></div>
+      <div class="color-swatch" style="background-color: #8b5a2b;" data-color="#8b5a2b"></div>
+      <div class="color-swatch" style="background-color: #555555;" data-color="#555555"></div>
+      <div class="color-swatch" style="background-color: #000000;" data-color="#000000"></div>
+    </div>
+
+    <div class="action-footer">
+      <button id="btn-generate-3d" class="btn-giant btn-sparkle">
+        ✨ 3Dの<ruby>まほう<rt>まほう</rt></ruby>をかける！
+      </button>
+    </div>
+  </section>
+
+  <!-- ==================== MAGIC SCREEN (TRANSITION) ==================== -->
+  <section id="screen-magic" class="app-screen">
+    <div class="magic-wrapper">
+      <div class="magic-circle">🔮</div>
+      <div class="sparkles-container"></div>
+      <h2 class="magic-status"><ruby>まほう<rt>まほう</rt></ruby>をかけているよ...</h2>
+      <p class="magic-hint">えが３Dの「おもちゃ」に なっているよ！</p>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3D PREVIEW SCREEN ==================== -->
+  <section id="screen-preview" class="app-screen">
+    <div class="screen-header">
+      <button id="btn-back-to-canvas" class="btn-back btn-small">🎨 <ruby>かきなおす<rt>かきなおす</rt></ruby></button>
+      <h2>👀 3Dのできあがり！</h2>
+    </div>
+
+    <!-- 3D表示ビューア -->
+    <div id="preview-3d-container" class="viewer-3d-container"></div>
+
+    <!-- キャラクター情報設定 -->
+    <div class="character-setup-box">
+      <div class="input-row">
+        <label for="char-name-input"><ruby>おなまえ<rt>おなまえ</rt></ruby>:</label>
+        <div class="input-wrapper">
+          <input type="text" id="char-name-input" placeholder="なまえをつけてね" maxlength="15">
+          <button id="btn-speech-name" class="btn-speech" title="こえでいれる">🎤</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-footer">
+      <button id="btn-save-to-gallery" class="btn-giant btn-primary">
+        🎁 <ruby>おもちゃ箱<rt>おもちゃばこ</rt></ruby>にいれる！
+      </button>
+    </div>
+  </section>
+
+  <!-- ==================== GALLERY SCREEN ==================== -->
+  <section id="screen-gallery" class="app-screen">
+    <div class="screen-header">
+      <button class="btn-back btn-small">🏠 <ruby>もどる<rt>もどる</rt></ruby></button>
+      <h2>🎁 <ruby>マイおもちゃ箱<rt>まいおもちゃばこ</rt></ruby></h2>
+    </div>
+
+    <!-- おもちゃ箱グリッド -->
+    <div id="gallery-grid" class="gallery-grid-container">
+      <!-- JavaScriptで動的生成 -->
+      <div class="empty-gallery-msg">
+        まだおもちゃがないよ。<br>
+        えをかいて、3Dにしてみてね！🎨
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== AR SUMMON SCREEN ==================== -->
+  <section id="screen-ar" class="app-screen">
+    <!-- カメラ映像を背景にするため、ここに映像を重ねる -->
+    <video id="ar-video" autoplay playsinline muted></video>
+    <div id="ar-3d-container" class="ar-canvas-container"></div>
+
+    <!-- UIオーバーレイ -->
+    <div class="ar-ui-overlay">
+      <div class="ar-header">
+        <button id="btn-exit-ar" class="btn-back btn-small">🎁 <ruby>おもちゃ箱<rt>おもちゃばこ</rt></ruby></button>
+        <div class="ar-title-badge"><span id="ar-char-name">キャラクター</span></div>
+      </div>
+
+      <!-- カメラ警告アラート（上部） -->
+      <div class="ar-warning-alert">
+        ⚠️ <ruby>まわり<rt>まわり</rt></ruby>のひとや、ものに<ruby>気<rt>き</rt></ruby>をつけてあそんでね！
+      </div>
+
+      <!-- 照準（床認識インジケーター） -->
+      <div id="ar-reticle" class="ar-reticle-indicator">
+        <div class="reticle-circle"></div>
+        <div class="reticle-label"><ruby>ここをタップして召喚<rt>ここをタップしてしょうかん</rt></ruby></div>
+      </div>
+
+      <!-- 下部アニメーション/操作パネル -->
+      <div class="ar-control-panel">
+        <div class="animation-buttons-label">🏃‍♂️ <ruby>うごかしてみよう！<rt>うごかしてみよう！</rt></ruby></div>
+        <div class="ar-actions-row">
+          <button class="btn-action-trigger btn-action" data-action="walk">🚶‍♂️ <ruby>あるく<rt>あるく</rt></ruby></button>
+          <button class="btn-action-trigger btn-action" data-action="jump">🦘 <ruby>ジャンプ<rt>じゃんぷ</rt></ruby></button>
+          <button class="btn-action-trigger btn-action" data-action="dance">💃 <ruby>おどる<rt>おどる</rt></ruby></button>
+          <button class="btn-action-trigger btn-action" data-action="idle">🧍‍♂️ <ruby>とまる<rt>とまる</rt></ruby></button>
+        </div>
+
+        <div class="ar-utility-row">
+          <button id="btn-capture-photo" class="btn-capture">📸 <ruby>しゃしんを撮る<rt>しゃしんをとる</rt></ruby></button>
+          <button id="btn-share-link" class="btn-share">🔗 <ruby>みんなに送る<rt>みんなにおくる</rt></ruby></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== SHARE LINK MODAL ==================== -->
+  <div id="modal-share-result" class="app-modal">
+    <div class="modal-content">
+      <h3>✨ <ruby>まほうの共有リンク<rt>まほうのきょうゆうりんく</rt></ruby> ✨</h3>
+      <p class="modal-desc">
+        LINEやメールでおくると、ほかのスマホでもキミの3Dキャラがでてくるよ！
+      </p>
+
+      <div class="share-link-box">
+        <input type="text" id="share-url-text" readonly>
+        <button id="btn-copy-link" class="btn-modal btn-primary"><ruby>コピー<rt>こぴー</rt></ruby></button>
+      </div>
+
+      <div id="share-qr-container" class="qr-container">
+        <!-- SVGのQRコードがここに生成される -->
+      </div>
+      
+      <div class="modal-buttons">
+        <button id="btn-close-share" class="btn-modal btn-secondary"><ruby>とじる<rt>とじる</rt></ruby></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- エントリーポイントJS -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

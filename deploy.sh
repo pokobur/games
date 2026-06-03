@@ -13,6 +13,7 @@ mkdir -p _site
 echo "📁 静的ファイル（HTMLなど）をコピー中..."
 cp -r AIzukan _site/
 cp -r brainrot-game _site/
+cp -r purupoyo-chain _site/
 cp index.html _site/
 echo "game.plyo.blog" > _site/CNAME
 
@@ -42,6 +43,13 @@ cd animal-step
 npm install
 npm run build
 cp -r dist ../_site/animal-step
+cd ..
+
+echo "🔮 らくがき3D召喚 (magic-sketch-3d) をビルド中..."
+cd magic-sketch-3d
+npm install
+npm run build
+cp -r dist ../_site/magic-sketch-3d
 cd ..
 
 echo "☁️ GitHubの gh-pages ブランチにプッシュしています..."

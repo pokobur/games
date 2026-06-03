@@ -25,6 +25,8 @@ export class ARSummoner {
     this.touchStartY = 0;
     this.isSingleTouch = false;
     this.isDraggingModel = false; // キャラクター移動中かフラグ
+    this.touchStartPos = { x: 0, y: 0 };
+    this.touchStartTime = 0;
     this.raycaster = new THREE.Raycaster();
     this.floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // Y=0 平面
     
@@ -123,7 +125,8 @@ export class ARSummoner {
     this.scene.add(gridHelper);
     
     // リサイズ監視
-    window.addEventListener('resize', () => this.onResize());
+    this.resizeHandler = () => this.onResize();
+    window.addEventListener('resize', this.resizeHandler);
     
     // ジャイロ開始
     this.startGyro();
@@ -140,7 +143,7 @@ export class ARSummoner {
     this.hasGyro = false;
     this.yawCalibrated = false;
     
-    const handleOrientation = (e) => {
+    this.orientationHandler = (e) => {
       if (e.alpha !== null && e.beta !== null) {
         this.hasGyro = true;
         this.gyro.alpha = e.alpha; // Y軸周り回転 (0 ~ 360)
@@ -160,14 +163,14 @@ export class ARSummoner {
       try {
         const permission = await DeviceOrientationEvent.requestPermission();
         if (permission === 'granted') {
-          window.addEventListener('deviceorientation', handleOrientation);
+          window.addEventListener('deviceorientation', this.orientationHandler);
         }
       } catch (err) {
         console.warn("DeviceOrientation権限リクエスト失敗、タッチドラッグのみでカメラ操作を行います:", err);
       }
     } else {
       // Androidや非対応ブラウザ
-      window.addEventListener('deviceorientation', handleOrientation);
+      window.addEventListener('deviceorientation', this.orientationHandler);
     }
   }
 
@@ -277,7 +280,7 @@ export class ARSummoner {
 
   // 6. タッチジェスチャーのハンドリング (ピンチで拡大縮小、スワイプで回転、ドラッグで床移動)
   setupTouchGestures() {
-    const el = this.renderer.domElement;
+    const el = this.container; // 親コンテナに変更（クリックイベントが確実に届くように）
     
     el.addEventListener('touchstart', (e) => {
       const rect = el.getBoundingClientRect();
@@ -286,6 +289,8 @@ export class ARSummoner {
         this.isSingleTouch = true;
         this.touchStartX = e.touches[0].clientX;
         this.touchStartY = e.touches[0].clientY;
+        this.touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        this.touchStartTime = Date.now();
         this.isDraggingModel = false;
 
         // キャラクターが配置済みの場合、タップ箇所とキャラクターの当たり判定を行う
@@ -360,7 +365,21 @@ export class ARSummoner {
       }
     });
 
-    el.addEventListener('touchend', () => {
+    el.addEventListener('touchend', (e) => {
+      // モバイル用の高反応タップ召喚検知
+      if (!this.isPlaced && this.isSingleTouch) {
+        const touchDuration = Date.now() - this.touchStartTime;
+        const endTouch = e.changedTouches ? e.changedTouches[0] : null;
+        if (endTouch && touchDuration < 300) {
+          const dx = endTouch.clientX - this.touchStartPos.x;
+          const dy = endTouch.clientY - this.touchStartPos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          // 移動距離が15px未満なら純粋なタップとみなして召喚
+          if (dist < 15) {
+            this.summonCharacter();
+          }
+        }
+      }
       this.isDraggingModel = false;
     });
     
@@ -372,7 +391,7 @@ export class ARSummoner {
         this.startGyro();
       }
 
-      // 召喚されていない場合は、タップ位置への召喚を実行
+      // 召喚されていない場合は、タップ位置への召喚を実行（クリックフォールバック用）
       if (!this.isPlaced) {
         this.summonCharacter();
         return;
@@ -485,23 +504,19 @@ export class ARSummoner {
   animate() {
     if (!this.renderer) return;
     
-    requestAnimationFrame(() => this.animate());
+    this.animationId = requestAnimationFrame(() => this.animate());
     
     const clock = new THREE.Clock();
     let lastTime = performance.now();
     
     const tick = () => {
+      if (!this.renderer) return; // 破棄後に実行されるのを防止
       const now = performance.now();
-      const dt = Math.min((now - lastTime) / 1000, 0.1); // 最低10FPS相当でクランプ
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
       
-      // パーティクルの更新
       this.updateParticles();
-      
-      // ジャイロによるカメラ回転同期
       this.updateCameraFromGyro();
-      
-      // アニメーション更新
       this.updateCharacterAnimation(dt);
       
       if (this.renderer && this.scene && this.camera) {
@@ -514,13 +529,13 @@ export class ARSummoner {
 
   // パーティクル移動とフェードアウト
   updateParticles() {
+    if (!this.scene) return;
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.position.x += p.userData.vx;
       p.position.y += p.userData.vy;
       p.position.z += p.userData.vz;
       
-      // 重力
       p.userData.vy -= 0.001;
       
       p.userData.life -= p.userData.decay;
@@ -537,17 +552,14 @@ export class ARSummoner {
   updateCameraFromGyro() {
     if (!this.hasGyro || !this.camera) return;
     
-    // Euler角度 (Y-X-Z) をベースに同期
-    const alpha = this.gyro.alpha; // Y軸 (方位 0〜360)
-    const beta = this.gyro.beta;   // X軸 (ピッチ -180〜180)
-    const gamma = this.gyro.gamma; // Z軸 (ロール -90〜90)
+    const alpha = this.gyro.alpha;
+    const beta = this.gyro.beta;
+    const gamma = this.gyro.gamma;
     
-    // ラジアンへ変換
-    const radBeta = (beta - 90) * Math.PI / 180; // 90度傾けた状態をデフォルト水平に
+    const radBeta = (beta - 90) * Math.PI / 180;
     const radGamma = gamma * Math.PI / 180;
     const radAlpha = (alpha - this.initialYaw) * Math.PI / 180;
     
-    // カメラのオイラー角をセット (モバイル端末の向きを追従)
     const euler = new THREE.Euler(radBeta, -radAlpha, -radGamma, 'YXZ');
     this.camera.quaternion.setFromEuler(euler);
   }
@@ -564,17 +576,86 @@ export class ARSummoner {
     this.renderer.setSize(width, height);
   }
 
-  // 3D/ARの停止
+  // 3D/ARの停止と全リソースの徹底クリーンアップ (メモリリーク防止)
   stop() {
-    this.renderer = null;
-    this.scene = null;
+    // 1. イベントリスナーの解除
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler);
+      this.resizeHandler = null;
+    }
+    if (this.orientationHandler) {
+      window.removeEventListener('deviceorientation', this.orientationHandler);
+      this.orientationHandler = null;
+    }
+
+    // 2. アニメーションの停止
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+
+    // 3. シーンのクリーンアップ (再帰的)
+    if (this.scene) {
+      this.disposeObject(this.scene);
+      this.scene = null;
+    }
+
+    // 4. レンダラーのクリーンアップ
+    if (this.renderer) {
+      this.renderer.dispose();
+      if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+      }
+      this.renderer = null;
+    }
+
     this.camera = null;
+    this.activeModel = null;
+    this.summonedObject = null;
+    this.particles = [];
+    this.container.innerHTML = '';
     
-    // カメラストリームの停止
-    if (this.video.srcObject) {
+    // 5. カメラストリームの停止
+    if (this.video && this.video.srcObject) {
       const tracks = this.video.srcObject.getTracks();
       tracks.forEach(track => track.stop());
       this.video.srcObject = null;
     }
+  }
+
+  // 再帰的オブジェクト破棄メソッド
+  disposeObject(obj) {
+    if (!obj) return;
+    
+    while (obj.children && obj.children.length > 0) {
+      this.disposeObject(obj.children[0]);
+      obj.remove(obj.children[0]);
+    }
+
+    if (obj.geometry) {
+      obj.geometry.dispose();
+    }
+
+    if (obj.material) {
+      if (Array.isArray(obj.material)) {
+        obj.material.forEach(mat => this.disposeMaterial(mat));
+      } else {
+        this.disposeMaterial(obj.material);
+      }
+    }
+  }
+
+  // マテリアル＆テクスチャ破棄メソッド
+  disposeMaterial(material) {
+    if (!material) return;
+    
+    const textureKeys = ['map', 'lightMap', 'bumpMap', 'normalMap', 'specularMap', 'envMap', 'roughnessMap', 'metalnessMap', 'alphaMap'];
+    textureKeys.forEach(key => {
+      if (material[key] && typeof material[key].dispose === 'function') {
+        material[key].dispose();
+      }
+    });
+
+    material.dispose();
   }
 }

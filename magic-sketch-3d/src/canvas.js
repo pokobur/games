@@ -18,6 +18,21 @@ export class PaintCanvas {
     this.redoStack = [];
     this.maxStackSize = 15;
     
+    // イベントリスナーのバインド参照を保持 (解除可能にするため)
+    this.boundMouseDown = (e) => this.startDrawing(e);
+    this.boundMouseMove = (e) => this.draw(e);
+    this.boundMouseUp = () => this.stopDrawing();
+    
+    this.boundTouchStart = (e) => {
+      e.preventDefault();
+      this.startDrawing(e.touches[0]);
+    };
+    this.boundTouchMove = (e) => {
+      e.preventDefault();
+      this.draw(e.touches[0]);
+    };
+    this.boundTouchEnd = () => this.stopDrawing();
+    
     this.setupResize();
     this.setupEvents();
     this.clear();
@@ -29,41 +44,78 @@ export class PaintCanvas {
   }
 
   setupEvents() {
-    // マウスイベント
-    this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
-    this.canvas.addEventListener('mousemove', (e) => this.draw(e));
-    window.addEventListener('mouseup', () => this.stopDrawing());
+    // マウスイベント登録
+    this.canvas.addEventListener('mousedown', this.boundMouseDown);
+    this.canvas.addEventListener('mousemove', this.boundMouseMove);
+    window.addEventListener('mouseup', this.boundMouseUp);
 
-    // タッチイベント (モバイル対応)
-    this.canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      this.startDrawing(e.touches[0]);
-    }, { passive: false });
-    this.canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      this.draw(e.touches[0]);
-    }, { passive: false });
-    window.addEventListener('touchend', () => this.stopDrawing());
+    // タッチイベント登録 (モバイル対応)
+    this.canvas.addEventListener('touchstart', this.boundTouchStart, { passive: false });
+    this.canvas.addEventListener('touchmove', this.boundTouchMove, { passive: false });
+    window.addEventListener('touchend', this.boundTouchEnd);
+  }
+
+  // キャンバス破棄とイベント解除 (メモリリーク・リスナー重複対策)
+  destroy() {
+    // 1. イベントリスナーの解除
+    if (this.canvas) {
+      this.canvas.removeEventListener('mousedown', this.boundMouseDown);
+      this.canvas.removeEventListener('mousemove', this.boundMouseMove);
+      this.canvas.removeEventListener('touchstart', this.boundTouchStart);
+      this.canvas.removeEventListener('touchmove', this.boundTouchMove);
+    }
+    window.removeEventListener('mouseup', this.boundMouseUp);
+    window.removeEventListener('touchend', this.boundTouchEnd);
+
+    // 2. スタック履歴メモリの明示的な解放
+    this.clearHistory();
+    this.undoStack = null;
+    this.redoStack = null;
+    
+    this.canvas = null;
+    this.ctx = null;
+  }
+
+  // 履歴メモリを完全にクリア
+  clearHistory() {
+    // 保存されているImageDataオブジェクトへの参照を切断しGCを促進
+    if (this.undoStack) {
+      while (this.undoStack.length > 0) {
+        this.undoStack.pop();
+      }
+    }
+    if (this.redoStack) {
+      while (this.redoStack.length > 0) {
+        this.redoStack.pop();
+      }
+    }
   }
 
   // キャンバス状態の保存
   saveState() {
+    if (!this.ctx || !this.undoStack) return;
+    
     // アクション実行前の状態を記録
     const imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
     this.undoStack.push(imgData);
     
     // 最大保存サイズを超えたら古いものを削除
     if (this.undoStack.length > this.maxStackSize) {
-      this.undoStack.shift();
+      const removed = this.undoStack.shift();
+      // 参照を切断
     }
     
     // 新しいお絵かきが行われたためRedoスタックは空にする
-    this.redoStack = [];
+    if (this.redoStack) {
+      while (this.redoStack.length > 0) {
+        this.redoStack.pop();
+      }
+    }
   }
 
   // 元に戻す (Undo)
   undo() {
-    if (this.undoStack.length === 0) return;
+    if (!this.undoStack || this.undoStack.length === 0) return;
     
     // 現在の状態をRedo用に保存
     const currentImg = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
@@ -77,7 +129,7 @@ export class PaintCanvas {
 
   // やり直す (Redo)
   redo() {
-    if (this.redoStack.length === 0) return;
+    if (!this.redoStack || this.redoStack.length === 0) return;
     
     // 現在の状態をUndo用に保存
     const currentImg = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
@@ -106,7 +158,9 @@ export class PaintCanvas {
   clear() {
     // 状態を保存
     this.saveState();
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
   }
 
   getCoordinates(e) {

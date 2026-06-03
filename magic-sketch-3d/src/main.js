@@ -1,7 +1,7 @@
-import * as THREE from 'three';
 import { PaintCanvas } from './canvas.js';
 import { ModelGenerator } from './generator.js';
 import { ARSummoner } from './ar.js';
+import { Previewer3D } from './previewer.js';
 import { galleryDB, SpeechNameRecognizer } from './gallery.js';
 import { ShareManager } from './share.js';
 import { audioManager } from './audio.js';
@@ -11,15 +11,13 @@ const state = {
   currentScreen: 'screen-home',
   paintCanvas: null,
   arSummoner: null,
+  previewer3D: null, // 3Dプレビューコンポーネント
   speechRecognizer: null,
-  current3DModel: null, // THREE.Mesh
+  current3DModel: null, // THREE.Group
   currentGLBBuffer: null, // ArrayBuffer (GLB)
   currentName: '',
   selectedCharacterData: null // おもちゃ箱から選択したデータ
 };
-
-// プレビュー画面用のThree.jsインスタンス
-let previewScene, previewCamera, previewRenderer, previewMesh, previewAnimId;
 
 // DOMの読み込み完了後に開始
 window.addEventListener('DOMContentLoaded', async () => {
@@ -33,6 +31,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // 2. モジュールインスタンス化
   state.paintCanvas = new PaintCanvas('paint-canvas');
   state.speechRecognizer = new SpeechNameRecognizer('char-name-input', 'btn-speech-name');
+  state.previewer3D = new Previewer3D('preview-3d-container');
 
   // 3. UIイベントの紐付け
   setupAppEvents();
@@ -79,13 +78,10 @@ function navigateTo(screenId) {
   }
 
   if (previousScreen === 'screen-preview') {
-    // 3Dプレビュー画面を出るときはアニメーションループを止める
-    if (previewAnimId) {
-      cancelAnimationFrame(previewAnimId);
-      previewAnimId = null;
+    // 3Dプレビュー画面を出るときはGPUメモリ等のリソースを破棄
+    if (state.previewer3D) {
+      state.previewer3D.destroy();
     }
-    const container = document.getElementById('preview-3d-container');
-    container.innerHTML = '';
   }
 
   if (screenId === 'screen-gallery') {
@@ -380,7 +376,9 @@ function runMagic3DConversion() {
       
       // プレビュー画面起動
       navigateTo('screen-preview');
-      init3DPreview(mesh);
+      if (state.previewer3D) {
+        state.previewer3D.initPreview(mesh);
+      }
       
     } catch (err) {
       clearInterval(interval);
@@ -390,66 +388,6 @@ function runMagic3DConversion() {
   }, 2800);
 }
 
-// プレビュー画面の3Dビューアー初期化
-function init3DPreview(mesh) {
-  const container = document.getElementById('preview-3d-container');
-  container.innerHTML = ''; // クリア
-  
-  const w = container.clientWidth;
-  const h = container.clientHeight;
-  
-  previewScene = new THREE.Scene();
-  previewScene.background = new THREE.Color('#f0f4f8');
-  
-  previewCamera = new THREE.PerspectiveCamera(50, w / h, 0.1, 1000);
-  previewCamera.position.set(0, 0.4, 0.8);
-  
-  previewRenderer = new THREE.WebGLRenderer({ antialias: true });
-  previewRenderer.setSize(w, h);
-  previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  previewRenderer.shadowMap.enabled = true;
-  container.appendChild(previewRenderer.domElement);
-  
-  // ライト
-  const light = new THREE.AmbientLight(0xffffff, 0.7);
-  previewScene.add(light);
-  
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  dirLight.position.set(5, 10, 7);
-  previewScene.add(dirLight);
-  
-  // 3Dプレビュー用モデルの配置
-  previewMesh = mesh.clone();
-  previewMesh.position.set(0, 0, 0);
-  // スケールをプレビューボックス用にやや大きめに調整
-  previewMesh.scale.set(0.65, 0.65, 0.65);
-  previewScene.add(previewMesh);
-  
-  // グリッド
-  const grid = new THREE.GridHelper(2, 10, 0x007aff, 0xcccccc);
-  grid.position.y = -0.2;
-  previewScene.add(grid);
-
-  // カメラをモデルへ向ける
-  previewCamera.lookAt(0, 0, 0);
-
-  // ゆっくり回転させるアニメーションループ
-  let angle = 0;
-  const animatePreview = () => {
-    previewAnimId = requestAnimationFrame(animatePreview);
-    
-    angle += 0.015;
-    if (previewMesh) {
-      previewMesh.rotation.y = angle;
-      // 微妙なホバリング
-      previewMesh.position.y = Math.sin(angle * 2) * 0.02;
-    }
-    
-    previewRenderer.render(previewScene, previewCamera);
-  };
-  
-  animatePreview();
-}
 
 // おもちゃ箱（ギャラリー）画面のレンダリング
 async function loadGallery() {
@@ -520,7 +458,9 @@ async function loadGallery() {
           state.current3DModel = mesh;
           state.currentName = char.name;
           navigateTo('screen-preview');
-          init3DPreview(mesh);
+          if (state.previewer3D) {
+            state.previewer3D.initPreview(mesh);
+          }
           // 入力欄に名前を復元
           document.getElementById('char-name-input').value = char.name;
         } catch (err) {

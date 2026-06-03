@@ -13,7 +13,11 @@ const PALETTE = [
   "#ff9ccb", // 9: 薄ピンク
   "#8b5a2b", // 10: 茶色
   "#555555", // 11: グレー
-  "#000000"  // 12: 黒
+  "#000000", // 12: 黒
+  "#ffffff", // 13: 白
+  "#16a085", // 14: ミント
+  "#d35400", // 15: 濃いオレンジ
+  "#2c3e50"  // 16: ネイビー
 ];
 
 export const ShareManager = {
@@ -170,26 +174,40 @@ export const ShareManager = {
   },
 
   // 3. RLEデコードとキャンバス復元
+  // 共有URLのハッシュに含まれる圧縮データから、元のドット絵キャラクターを復元します。
   decompressHashToCanvas(hashString) {
     try {
+      if (!hashString) {
+        throw new Error("ハッシュデータが空です。");
+      }
+
+      // Base64デコード ＆ URLエンコードの復元
       const decodedJson = decodeURIComponent(atob(hashString));
       const payload = JSON.parse(decodedJson);
       
       const charName = payload.n;
       const rleBase64 = payload.rle;
+
+      if (!rleBase64) {
+        throw new Error("RLE圧縮データが見つかりません。");
+      }
       
-      // Base64からバイト配列へ復元
+      // RLE用のBase64からバイナリ配列（バイト列）へ復元
       const binaryString = atob(rleBase64);
       const compressedBytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         compressedBytes[i] = binaryString.charCodeAt(i);
       }
 
-      // RLE展開
+      // RLE配列の展開処理
+      // [色インデックス, 連続数] のペアを順番に読み解き、64x64 (4096ピクセル) のインデックス配列を再構成
       const indexArray = new Uint8Array(64 * 64);
       let indexPointer = 0;
       
       for (let i = 0; i < compressedBytes.length; i += 2) {
+        if (i + 1 >= compressedBytes.length) {
+          throw new Error("RLEデータ形式が不完全です（ペアの欠損）。");
+        }
         const colorVal = compressedBytes[i];
         const count = compressedBytes[i + 1];
         
@@ -200,7 +218,7 @@ export const ShareManager = {
         }
       }
 
-      // 64x64 のピクセルデータ作成
+      // 展開されたカラーインデックスに基づき、64x64ピクセルのImageDataを作成
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = 64;
       tempCanvas.height = 64;
@@ -208,7 +226,7 @@ export const ShareManager = {
       const imgData = tempCtx.createImageData(64, 64);
       const data = imgData.data;
 
-      // HEXをRGB値に変換するヘルパー
+      // HEXカラー文字列をRGB値のオブジェクトに変換するインラインユーティリティ
       const hexToRgb = (hex) => {
         const r = parseInt(hex.slice(1, 3), 16);
         const g = parseInt(hex.slice(3, 5), 16);
@@ -216,50 +234,57 @@ export const ShareManager = {
         return { r, g, b };
       };
 
+      // 4096ピクセルの各カラーを設定 (0 = 透明, 1〜12 = パレット指定色)
       for (let i = 0; i < 64 * 64; i++) {
         const colorIdx = indexArray[i];
         const pixelOffset = i * 4;
 
         if (colorIdx === 0) {
-          // 透明
+          // アルファ値を0にして完全に透明にする
           data[pixelOffset] = 0;
           data[pixelOffset + 1] = 0;
           data[pixelOffset + 2] = 0;
           data[pixelOffset + 3] = 0;
         } else {
-          // パレット色
+          // カラーインデックスに対応するパレット色に置き換え
+          if (colorIdx - 1 >= PALETTE.length) {
+            throw new Error(`不正なカラーインデックスを検出しました: ${colorIdx}`);
+          }
           const { r, g, b } = hexToRgb(PALETTE[colorIdx - 1]);
           data[pixelOffset] = r;
           data[pixelOffset + 1] = g;
           data[pixelOffset + 2] = b;
-          data[pixelOffset + 3] = 255;
+          data[pixelOffset + 3] = 255; // 不透明
         }
       }
 
+      // 64x64の一時キャンバスにピクセルを書き込み
       tempCtx.putImageData(imgData, 0, 0);
 
       return new Promise((resolve, reject) => {
-        // 512x512の最終キャンバスに拡大コピー
+        // 512x512の最終表示用キャンバスを作成
         const finalCanvas = document.createElement('canvas');
         finalCanvas.width = 512;
         finalCanvas.height = 512;
         const finalCtx = finalCanvas.getContext('2d');
         
-        // ピクセルアートをシャープに表示 (子供がよろこぶおもちゃ感)
+        // 【重要】ドット絵がボケないように画像の平滑化(アンチエイリアシング)をオフにする
+        // これにより、解像度が低い画像を引き延ばしてもレトロでくっきりしたトイ感が保たれます
         finalCtx.imageSmoothingEnabled = false;
         
-        // 縮小画像を拡大して描画
+        // 縮小画像の一時CanvasからURLを生成して読み込み、512x512に引き伸ばして描画
         const img = new Image();
         img.onload = () => {
           finalCtx.drawImage(img, 0, 0, 512, 512);
           resolve({ canvas: finalCanvas, charName });
         };
-        img.onerror = reject;
+        img.onerror = (e) => reject(new Error("一時画像の読み込みに失敗しました。"));
         img.src = tempCanvas.toDataURL('image/png');
       });
 
     } catch (err) {
-      return Promise.reject(err);
+      console.error("ハッシュ展開中にエラーが発生しました:", err);
+      return Promise.reject(new Error("まほうのデータの展開に失敗しました: " + err.message));
     }
   },
 

@@ -42,6 +42,9 @@ export class ARSummoner {
     this.walkDirection = 1; // 1 = 前進, -1 = 後退
     this.walkBound = 1.2;    // 歩く限界距離 (前後1.2m)
     
+    this.clock = null;
+    this.lastTime = 0;
+    
     this.setupCamera();
   }
 
@@ -135,6 +138,8 @@ export class ARSummoner {
     this.setupTouchGestures();
     
     // アニメーションループ開始
+    this.clock = new THREE.Clock();
+    this.lastTime = performance.now();
     this.animate();
   }
 
@@ -280,10 +285,16 @@ export class ARSummoner {
 
   // 6. タッチジェスチャーのハンドリング (ピンチで拡大縮小、スワイプで回転、ドラッグで床移動)
   setupTouchGestures() {
-    const el = this.container; // 親コンテナに変更（クリックイベントが確実に届くように）
+    const el = document.getElementById('screen-ar');
+    if (!el) return;
     
-    el.addEventListener('touchstart', (e) => {
-      const rect = el.getBoundingClientRect();
+    this.boundTouchStart = (e) => {
+      // コントロールパネル、ヘッダー、警告、またはシェアダイアログ内での操作はスルー
+      if (e.target.closest('.ar-control-panel') || e.target.closest('.ar-header') || e.target.closest('.ar-warning-alert') || e.target.closest('#modal-share-result')) {
+        return;
+      }
+      
+      const rect = this.container.getBoundingClientRect();
       
       if (e.touches.length === 1) {
         this.isSingleTouch = true;
@@ -319,11 +330,17 @@ export class ARSummoner {
           this.touchStartScale = this.summonedObject.scale.x;
         }
       }
-    });
+    };
 
-    el.addEventListener('touchmove', (e) => {
+    this.boundTouchMove = (e) => {
       if (!this.summonedObject) return;
-      const rect = el.getBoundingClientRect();
+      
+      // UI上でのタッチムーブはスルー
+      if (e.target.closest('.ar-control-panel') || e.target.closest('.ar-header') || e.target.closest('.ar-warning-alert') || e.target.closest('#modal-share-result')) {
+        return;
+      }
+
+      const rect = this.container.getBoundingClientRect();
 
       if (e.touches.length === 1 && this.isSingleTouch) {
         if (this.isDraggingModel) {
@@ -363,9 +380,13 @@ export class ARSummoner {
           this.summonedObject.scale.set(newScale, newScale, newScale);
         }
       }
-    });
+    };
 
-    el.addEventListener('touchend', (e) => {
+    this.boundTouchEnd = (e) => {
+      if (e.target.closest('.ar-control-panel') || e.target.closest('.ar-header') || e.target.closest('.ar-warning-alert') || e.target.closest('#modal-share-result')) {
+        return;
+      }
+
       // モバイル用の高反応タップ召喚検知
       if (!this.isPlaced && this.isSingleTouch) {
         const touchDuration = Date.now() - this.touchStartTime;
@@ -381,11 +402,14 @@ export class ARSummoner {
         }
       }
       this.isDraggingModel = false;
-    });
+    };
     
-    // ダブルタップでリセット
     let lastTap = 0;
-    el.addEventListener('click', (e) => {
+    this.boundClick = (e) => {
+      if (e.target.closest('.ar-control-panel') || e.target.closest('.ar-header') || e.target.closest('.ar-warning-alert') || e.target.closest('#modal-share-result')) {
+        return; // UI上のクリックはスルー
+      }
+
       // ジャイロ未起動ならユーザーアクションイベント直下で同期的に権限要求を起動
       if (!this.hasGyro) {
         this.startGyro();
@@ -410,7 +434,12 @@ export class ARSummoner {
         }
       }
       lastTap = currentTime;
-    });
+    };
+
+    el.addEventListener('touchstart', this.boundTouchStart);
+    el.addEventListener('touchmove', this.boundTouchMove);
+    el.addEventListener('touchend', this.boundTouchEnd);
+    el.addEventListener('click', this.boundClick);
   }
 
   // 7. プログラムアニメーション (ボーンを使わないポヨンポヨン動作)
@@ -506,25 +535,17 @@ export class ARSummoner {
     
     this.animationId = requestAnimationFrame(() => this.animate());
     
-    const clock = new THREE.Clock();
-    let lastTime = performance.now();
+    const now = performance.now();
+    const dt = Math.min((now - this.lastTime) / 1000, 0.1);
+    this.lastTime = now;
     
-    const tick = () => {
-      if (!this.renderer) return; // 破棄後に実行されるのを防止
-      const now = performance.now();
-      const dt = Math.min((now - lastTime) / 1000, 0.1);
-      lastTime = now;
-      
-      this.updateParticles();
-      this.updateCameraFromGyro();
-      this.updateCharacterAnimation(dt);
-      
-      if (this.renderer && this.scene && this.camera) {
-        this.renderer.render(this.scene, this.camera);
-      }
-    };
+    this.updateParticles();
+    this.updateCameraFromGyro();
+    this.updateCharacterAnimation(dt);
     
-    tick();
+    if (this.renderer && this.scene && this.camera) {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
   // パーティクル移動とフェードアウト
@@ -586,6 +607,13 @@ export class ARSummoner {
     if (this.orientationHandler) {
       window.removeEventListener('deviceorientation', this.orientationHandler);
       this.orientationHandler = null;
+    }
+    const el = document.getElementById('screen-ar');
+    if (el) {
+      if (this.boundTouchStart) el.removeEventListener('touchstart', this.boundTouchStart);
+      if (this.boundTouchMove) el.removeEventListener('touchmove', this.boundTouchMove);
+      if (this.boundTouchEnd) el.removeEventListener('touchend', this.boundTouchEnd);
+      if (this.boundClick) el.removeEventListener('click', this.boundClick);
     }
 
     // 2. アニメーションの停止

@@ -38,10 +38,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // 4. 音設定の初期化
   const soundBtn = document.getElementById('btn-sound-toggle');
-  soundBtn.addEventListener('click', () => {
-    const enabled = audioManager.toggleSound();
-    soundBtn.textContent = enabled ? '🔊' : '🔇';
-  });
+  if (soundBtn) {
+    soundBtn.addEventListener('click', () => {
+      const enabled = audioManager.toggleSound();
+      soundBtn.textContent = enabled ? '🔊' : '🔇';
+    });
+  }
 
   // 5. ディープリンク（共有ハッシュ）の確認
   checkDeepLink();

@@ -174,30 +174,88 @@
             text-shadow: 0 0 8px rgba(244, 114, 182, 0.5);
         }
 
-        /* Bottom instruction text */
-        .instructions {
-            margin-top: 10px;
-            max-width: 450px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 18px;
-            padding: 10px 16px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.04);
-            font-size: 0.82rem;
-            line-height: 1.35;
-            border: 2px solid #e2e8f0;
+        /* Help Modal Dialog */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.22s ease;
+            pointer-events: auto;
+            border-radius: 20px;
         }
 
-        .instructions h3 {
-            margin: 0 0 4px 0;
-            font-size: 0.9rem;
+        .modal-content {
+            background: rgba(255, 255, 255, 0.96);
+            border: 3px solid #0ea5e9;
+            box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border-radius: 24px;
+            width: 88%;
+            max-width: 380px;
+            padding: 24px;
+            position: relative;
+            transform: scale(1);
+            transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+            display: none;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: #e2e8f0;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 900;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+            transform: scale(1.08);
+        }
+
+        .modal-body h3 {
+            margin: 0 0 14px 0;
+            font-size: 1.15rem;
             color: #0369a1;
             font-weight: 900;
+            text-align: center;
         }
 
-        .instructions ul {
+        .modal-body ul {
             margin: 0;
-            padding-left: 16px;
-            color: #475569;
+            padding-left: 20px;
+            color: #334155;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            text-align: left;
+        }
+
+        .modal-body li {
+            margin-bottom: 8px;
         }
 
         /* Responsive scaling for small heights */
@@ -205,9 +263,6 @@
             #game-wrapper {
                 height: 580px;
                 width: 375px;
-            }
-            .instructions {
-                display: none;
             }
             h1.main-title {
                 font-size: 1.7rem;
@@ -224,8 +279,13 @@
 
     <div id="game-wrapper">
         <div class="ui-overlay">
-            <div id="btn-restart" class="ui-btn" title="はじめからやりなおす">🔄</div>
-            <div id="btn-sound" class="ui-btn" title="おと ON/OFF">🔊</div>
+            <div style="display: flex; gap: 8px; pointer-events: auto;">
+                <div id="btn-restart" class="ui-btn" title="はじめからやりなおす">🔄</div>
+                <div id="btn-help" class="ui-btn" title="あそびかた">❓</div>
+            </div>
+            <div style="pointer-events: auto;">
+                <div id="btn-sound" class="ui-btn" title="おと ON/OFF">🔊</div>
+            </div>
         </div>
 
         <div class="stats-overlay">
@@ -244,18 +304,25 @@
         </div>
 
         <canvas id="game-canvas" width="450" height="700"></canvas>
-    </div>
 
-    <div class="instructions">
-        <h3>🎮 あそびかた</h3>
-        <ul>
-            <li>ブロックを選んでドラッグ！<strong>上下左右のみ</strong>に動かせて、移動先のブロックと入れ替わるよ！</li>
-            <li><strong>制限時間は8秒！</strong>指をはなすかタイムアップで連鎖がスタート！</li>
-            <li>同じ色のブロックがタテ・ヨコに<strong>4つつながる</strong>と消滅して連鎖攻撃！</li>
-            <li><strong>【バトル】</strong>色ブロックを消すと敵をこうげき！敵の予告おじゃまブロックは、<strong>黄色のシールドブロック</strong>を消すと高い効率で相殺（ガード）できるよ！</li>
-            <li><strong>【ステージクリア】</strong>ボスのHPを0にすると次のステージへ！ステージ4から<strong>紫ブロック</strong>が登場！</li>
-            <li><strong>【ゲームオーバー】</strong>ブロックがDANGER線をこえて3秒たつとゲームオーバー！</li>
-        </ul>
+        <!-- Help Modal Dialog -->
+        <div id="modal-help" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button id="modal-help-close" class="modal-close">✕</button>
+                <div class="modal-body">
+                    <h3>🎮 あそびかた</h3>
+                    <ul>
+                        <li>ブロックを選んでドラッグ！<strong>上下左右のみ</strong>に動かせて、移動先のブロックと入れ替わるよ！</li>
+                        <li><strong>制限時間は8秒！</strong>指をはなすかタイムアップで連鎖がスタート！</li>
+                        <li>同じ色のブロックがタテ・ヨコに<strong>4つつながる</strong>と消滅して連鎖攻撃！</li>
+                        <li><strong>【おじゃまブロック】</strong>自分では動かせず、繋げても消えないよ！隣で色ブロックを消すと一緒に消滅するよ！</li>
+                        <li><strong>【バトル】</strong>色ブロックを消すと敵をこうげき！敵の予告おじゃまブロックは、<strong>黄色のシールドブロック</strong>を消すと高い効率で相殺（ガード）できるよ！</li>
+                        <li><strong>【ステージクリア】</strong>ボスのHPを0にすると次のステージへ！ステージ4から<strong>紫ブロック</strong>が登場！</li>
+                        <li><strong>【ゲームオーバー】</strong>ブロックがDANGER線をこえて3秒たつとゲームオーバー！</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -871,7 +938,7 @@
             }
 
             const body = event.body;
-            if (body && body.label === 'block') {
+            if (body && body.label === 'block' && body.colorName !== 'gray') {
                 draggedBody = body;
                 draggedBody.isSensor = true; // Disable physical push collisions during drag
                 dragStartTime = Date.now();
@@ -2744,7 +2811,7 @@
                 const b1 = blocks[i];
                 for (let j = i + 1; j < blocks.length; j++) {
                     const b2 = blocks[j];
-                    if (b1.colorName === b2.colorName) {
+                    if (b1.colorName === b2.colorName && b1.colorName !== 'gray') {
                         const dx = b1.position.x - b2.position.x;
                         const dy = b1.position.y - b2.position.y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -3038,14 +3105,14 @@
 
                         // Play drop sound and show floating text
                         synth.playDrop();
-                        addFloatingText(`おじゃまブロック+${count}！`, 225, 205, '#94a3b8');
+                        addFloatingText(`おじゃまブロック+${count}！`, 225, 260, '#f43f5e', true);
                         
                         // Flash and shake screen slightly to indicate attack
                         playerFlash = 8;
                         playerShake = 12;
                     } else {
                         // Guarded successfully!
-                        addFloatingText("こうげきをふせいだ！", 225, 205, '#22c55e');
+                        addFloatingText("こうげきをふせいだ！", 225, 260, '#22c55e', true);
                         synth.playTick(true);
                     }
                 }
@@ -3224,6 +3291,31 @@
             handleStartTrigger(touch.clientX, touch.clientY);
             if (gameState === STATE_TITLE || gameState === STATE_GAME_OVER || gameState === STATE_VICTORY) {
                 e.preventDefault();
+            }
+        });
+
+        // Help Modal Controls
+        const helpBtn = document.getElementById('btn-help');
+        const helpModal = document.getElementById('modal-help');
+        const helpCloseBtn = document.getElementById('modal-help-close');
+
+        helpBtn.addEventListener('click', function() {
+            synth.init();
+            synth.playGrab();
+            helpModal.classList.remove('hidden');
+        });
+
+        helpCloseBtn.addEventListener('click', function() {
+            synth.init();
+            synth.playTick(true);
+            helpModal.classList.add('hidden');
+        });
+
+        helpModal.addEventListener('click', function(e) {
+            if (e.target === helpModal) {
+                synth.init();
+                synth.playTick(true);
+                helpModal.classList.add('hidden');
             }
         });
 

@@ -136,9 +136,13 @@ export class BarrelGame {
             
             container.appendChild(slot);
             
-            slot.addEventListener('click', () => {
+            const handleTap = (e) => {
+                e.preventDefault();
                 this.insertSword(slot, idx);
-            });
+            };
+            
+            slot.addEventListener('click', handleTap);
+            slot.addEventListener('touchstart', handleTap, { passive: false });
         });
     }
 

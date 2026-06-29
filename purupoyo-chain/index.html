@@ -952,8 +952,16 @@
                     gameState = STATE_DRAGGING;
                     synth.playGrab();
                     
-                    // Queue garbage count for next turn based on stage difficulty
-                    pendingGarbageCount = 2 + Math.floor(stage / 2) + Math.floor(Math.random() * 2);
+                    // Stage-based garbage count difficulty scale
+                    let baseGarbage = 3;
+                    if (stage === 2) baseGarbage = 6;
+                    else if (stage === 3) baseGarbage = 10;
+                    else if (stage === 4) baseGarbage = 15;
+                    else if (stage === 5) baseGarbage = 21;
+                    else if (stage >= 6) baseGarbage = 21 + (stage - 5) * 5;
+
+                    const randomVariance = Math.floor(Math.random() * (stage + 1));
+                    pendingGarbageCount = baseGarbage + randomVariance;
                 }
             } else {
                 mouseConstraint.body = null;
@@ -1036,7 +1044,7 @@
 
             for (let i = 0; i < blocks.length; i++) {
                 const b1 = blocks[i];
-                if (visited.has(b1.id)) continue;
+                if (visited.has(b1.id) || b1.colorName === 'gray') continue;
 
                 const group = [b1];
                 visited.add(b1.id);
@@ -1046,7 +1054,7 @@
                     const current = queue.shift();
                     for (let j = 0; j < blocks.length; j++) {
                         const b2 = blocks[j];
-                        if (visited.has(b2.id)) continue;
+                        if (visited.has(b2.id) || b2.colorName === 'gray') continue;
 
                         if (current.colorName === b2.colorName) {
                             const dx = current.position.x - b2.position.x;

@@ -52,6 +52,13 @@ npm run build
 cp -r dist ../_site/magic-sketch-3d
 cd ..
 
+echo "⏱️ ビジュアルタイマー (kodomo-timer) をビルド中..."
+cd kodomo-timer
+npm install
+npm run build
+cp -r dist ../_site/kodomo-timer
+cd ..
+
 echo "☁️ GitHubの gh-pages ブランチにプッシュしています..."
 # 元のリポジトリURLを取得
 REMOTE_URL=$(git config --get remote.origin.url)

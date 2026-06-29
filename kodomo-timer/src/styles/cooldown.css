@@ -1,0 +1,329 @@
+/* ============================================================
+   Cooldown / Breathing Mode Styles
+   おちつきモードのスタイル
+   ============================================================ */
+
+/* ---------- Screen ---------- */
+.cooldown-screen {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  padding-top: calc(var(--safe-top) + var(--space-lg));
+  padding-bottom: calc(var(--safe-bottom) + var(--space-lg));
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    hsl(235, 45%, 14%) 0%,
+    hsl(250, 55%, 20%) 50%,
+    hsl(220, 50%, 16%) 100%
+  );
+}
+
+/* ---------- Stars / Particles Background ---------- */
+.cooldown-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cooldown-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-full);
+  animation: starTwinkle var(--duration, 3s) ease-in-out infinite var(--delay, 0s);
+}
+
+.cooldown-star:nth-child(odd) {
+  width: 2px;
+  height: 2px;
+  background: rgba(200, 210, 255, 0.5);
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.4); }
+}
+
+/* Floating particles */
+.cooldown-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, rgba(160, 140, 255, 0.4), transparent);
+  border-radius: var(--radius-full);
+  animation: particleFloat var(--duration, 8s) ease-in-out infinite var(--delay, 0s);
+}
+
+@keyframes particleFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(var(--dx, 20px), var(--dy, -30px)) scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+/* ---------- Breathing Circle ---------- */
+.breathing-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-full);
+  background: radial-gradient(
+    circle at 40% 40%,
+    hsl(230, 70%, 65%),
+    hsl(260, 60%, 50%),
+    hsl(280, 55%, 40%)
+  );
+  box-shadow:
+    0 0 40px rgba(130, 110, 255, 0.35),
+    0 0 80px rgba(130, 110, 255, 0.15),
+    inset 0 0 30px rgba(255, 255, 255, 0.08);
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.breathing-circle.inhale {
+  animation: breatheIn 4s ease-in-out forwards;
+}
+
+.breathing-circle.exhale {
+  animation: breatheOut 4s ease-in-out forwards;
+}
+
+.breathing-circle.hold {
+  animation: breatheHold 2s ease-in-out forwards;
+}
+
+@keyframes breatheIn {
+  from {
+    transform: scale(1);
+    box-shadow:
+      0 0 40px rgba(130, 110, 255, 0.35),
+      0 0 80px rgba(130, 110, 255, 0.15);
+  }
+  to {
+    transform: scale(1.5);
+    box-shadow:
+      0 0 60px rgba(130, 110, 255, 0.5),
+      0 0 120px rgba(130, 110, 255, 0.25);
+  }
+}
+
+@keyframes breatheOut {
+  from {
+    transform: scale(1.5);
+    box-shadow:
+      0 0 60px rgba(130, 110, 255, 0.5),
+      0 0 120px rgba(130, 110, 255, 0.25);
+  }
+  to {
+    transform: scale(1);
+    box-shadow:
+      0 0 40px rgba(130, 110, 255, 0.35),
+      0 0 80px rgba(130, 110, 255, 0.15);
+  }
+}
+
+@keyframes breatheHold {
+  from, to {
+    transform: scale(1.5);
+    box-shadow:
+      0 0 60px rgba(130, 110, 255, 0.5),
+      0 0 120px rgba(130, 110, 255, 0.25);
+  }
+}
+
+/* Glow ring */
+.breathing-circle::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: var(--radius-full);
+  border: 2px solid rgba(160, 140, 255, 0.25);
+  animation: glowRing 4s ease-in-out infinite;
+}
+
+@keyframes glowRing {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* ---------- Breathing Text ---------- */
+.breathing-text {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  margin-top: var(--space-xl);
+  min-height: 2.4em;
+  z-index: 1;
+  transition: opacity 0.5s ease;
+}
+
+.breathing-text.fade-out {
+  opacity: 0;
+}
+
+.breathing-text.fade-in {
+  opacity: 1;
+}
+
+/* ---------- Sound Selector ---------- */
+.sound-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xl);
+  z-index: 2;
+  flex-wrap: wrap;
+}
+
+.sound-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+  touch-action: manipulation;
+}
+
+.sound-btn .sound-btn-emoji {
+  font-size: 1.15rem;
+}
+
+.sound-btn:active {
+  transform: scale(0.95);
+}
+
+.sound-btn.active {
+  background: rgba(130, 110, 255, 0.3);
+  border-color: rgba(160, 140, 255, 0.6);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* ---------- Volume Slider ---------- */
+.volume-slider {
+  width: 100%;
+  max-width: 200px;
+  margin-top: var(--space-md);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.volume-slider input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.15);
+  outline: none;
+}
+
+.volume-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, hsl(230, 70%, 65%), hsl(260, 60%, 55%));
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.volume-slider input[type="range"]::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, hsl(230, 70%, 65%), hsl(260, 60%, 55%));
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.volume-icon {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+/* ---------- Cooldown Timer ---------- */
+.cooldown-timer {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.25);
+  margin-top: var(--space-lg);
+  font-variant-numeric: tabular-nums;
+  z-index: 1;
+  opacity: 0.4;
+}
+
+/* ---------- Close Button ---------- */
+.cooldown-close {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-md));
+  right: var(--space-md);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  z-index: 10;
+  transition: background var(--transition-fast);
+  touch-action: manipulation;
+}
+
+.cooldown-close:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-height: 640px) {
+  .breathing-circle {
+    width: 150px;
+    height: 150px;
+  }
+
+  .breathing-text {
+    font-size: 1.2rem;
+    margin-top: var(--space-md);
+  }
+}
+
+@media (min-width: 481px) {
+  .cooldown-screen {
+    margin: 0 auto;
+  }
+}

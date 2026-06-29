@@ -1,0 +1,563 @@
+/* ============================================================
+   Settings Screen Styles
+   設定画面のスタイル
+   ============================================================ */
+
+/* ---------- Screen ---------- */
+.settings-screen {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md);
+  padding-top: calc(var(--safe-top) + var(--space-md));
+  padding-bottom: calc(var(--safe-bottom) + var(--space-xl));
+  background: var(--color-bg);
+  overflow-y: auto;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.settings-header h1 {
+  font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+.settings-back-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+
+/* ---------- Section ---------- */
+.settings-section {
+  margin-bottom: var(--space-lg);
+}
+
+.settings-section-title {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--color-primary);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+  padding-left: var(--space-xs);
+}
+
+.settings-section-card {
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* ---------- Setting Item ---------- */
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  min-height: 56px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.settings-item:last-child {
+  border-bottom: none;
+}
+
+.settings-item-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.settings-item-sublabel {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-light);
+  margin-top: 2px;
+}
+
+.settings-item-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* ---------- PIN Modal ---------- */
+.pin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 10, 50, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: fadeIn 200ms ease forwards;
+  padding: var(--space-lg);
+}
+
+.pin-modal-content {
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  text-align: center;
+  width: 100%;
+  max-width: 320px;
+  animation: scaleIn 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pin-modal-title {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--color-text);
+  margin-bottom: var(--space-md);
+}
+
+.pin-modal-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-md);
+}
+
+.pin-input-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.pin-digit {
+  width: 48px;
+  height: 56px;
+  border: 2.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-md);
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-align: center;
+  background: var(--color-bg);
+  transition: border-color var(--transition-fast);
+}
+
+.pin-digit:focus {
+  border-color: var(--color-primary);
+}
+
+.pin-digit.filled {
+  border-color: var(--color-primary-light);
+  background: hsl(263, 70%, 97%);
+}
+
+.pin-digit.error {
+  border-color: var(--color-danger);
+  animation: shake 400ms ease;
+}
+
+.pin-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  max-width: 240px;
+  margin: 0 auto;
+}
+
+.pin-numpad-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: background var(--transition-fast);
+  touch-action: manipulation;
+}
+
+.pin-numpad-btn:active {
+  background: var(--color-primary-light);
+  color: var(--color-text-inverse);
+}
+
+.pin-numpad-btn.delete {
+  font-size: 1.2rem;
+  color: var(--color-text-light);
+}
+
+/* ---------- Recording Controls ---------- */
+.recording-controls {
+  padding: var(--space-md) 0;
+}
+
+.mic-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-danger) 0%, hsl(0, 75%, 48%) 100%);
+  color: var(--color-text-inverse);
+  font-size: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 4px 20px rgba(220, 60, 60, 0.35);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  touch-action: manipulation;
+  position: relative;
+}
+
+.mic-btn:active {
+  transform: scale(0.93);
+}
+
+.mic-btn.recording {
+  animation: micPulse 1.2s ease-in-out infinite;
+}
+
+.mic-btn.recording::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: var(--radius-full);
+  border: 3px solid var(--color-danger);
+  animation: micRingPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes micPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 4px 20px rgba(220, 60, 60, 0.35); }
+  50%      { transform: scale(1.05); box-shadow: 0 6px 28px rgba(220, 60, 60, 0.5); }
+}
+
+@keyframes micRingPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 0; transform: scale(1.3); }
+}
+
+.recording-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  margin-top: var(--space-sm);
+}
+
+/* Waveform */
+.recording-waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 40px;
+  margin: var(--space-md) 0;
+}
+
+.waveform-bar {
+  width: 4px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  animation: waveformBounce 0.6s ease-in-out infinite var(--delay, 0s);
+}
+
+@keyframes waveformBounce {
+  0%, 100% { height: 8px; }
+  50%      { height: var(--max-h, 30px); }
+}
+
+/* Recording slot */
+.recording-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-sm);
+}
+
+.recording-slot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.recording-slot-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recording-slot-duration {
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+  margin-top: 2px;
+}
+
+.recording-slot-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.recording-slot-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: background var(--transition-fast);
+}
+
+.recording-slot-btn.play {
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--color-primary);
+}
+
+.recording-slot-btn.play:active {
+  background: rgba(124, 58, 237, 0.2);
+}
+
+.recording-slot-btn.delete {
+  background: rgba(220, 60, 60, 0.08);
+  color: var(--color-danger);
+}
+
+.recording-slot-btn.delete:active {
+  background: rgba(220, 60, 60, 0.18);
+}
+
+.recording-empty {
+  text-align: center;
+  padding: var(--space-lg);
+  color: var(--color-text-light);
+  font-size: 0.85rem;
+}
+
+/* ---------- Log Summary / Stats ---------- */
+.log-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.stat-card {
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-card-number {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.stat-card-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  margin-top: var(--space-xs);
+}
+
+.stat-card.accent .stat-card-number {
+  color: var(--color-accent);
+}
+
+.stat-card.success .stat-card-number {
+  color: var(--color-success);
+}
+
+/* ---------- Radio Group ---------- */
+.radio-group {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+
+.radio-option {
+  flex: 1;
+}
+
+.radio-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radio-option-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border: 2.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  background: var(--color-bg);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast);
+  touch-action: manipulation;
+}
+
+.radio-option input[type="radio"]:checked + .radio-option-label {
+  border-color: var(--color-primary);
+  background: hsl(263, 70%, 97%);
+  color: var(--color-primary);
+}
+
+.radio-option input[type="radio"]:focus-visible + .radio-option-label {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+/* ---------- Toggle Switch ---------- */
+.toggle {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.12);
+  transition: background var(--transition-normal);
+  cursor: pointer;
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-solid);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: transform var(--transition-normal);
+}
+
+.toggle input:checked + .toggle-track {
+  background: var(--color-primary);
+}
+
+.toggle input:checked + .toggle-track::after {
+  transform: translateX(22px);
+}
+
+.toggle input:focus-visible + .toggle-track {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+/* ---------- Reward Editor ---------- */
+.reward-editor {
+  padding: var(--space-md) 0;
+}
+
+.reward-input-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.reward-input {
+  flex: 1;
+  height: 44px;
+  padding: 0 var(--space-md);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-size: 0.9rem;
+  transition: border-color var(--transition-fast);
+}
+
+.reward-input:focus {
+  border-color: var(--color-primary);
+}
+
+.reward-input::placeholder {
+  color: var(--color-text-light);
+}
+
+.reward-list {
+  margin-top: var(--space-md);
+}
+
+.reward-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-xs);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.reward-list-item .remove-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-danger);
+  font-size: 0.9rem;
+  transition: background var(--transition-fast);
+}
+
+.reward-list-item .remove-btn:active {
+  background: rgba(220, 60, 60, 0.1);
+}
+
+/* ---------- Responsive ---------- */
+@media (min-width: 481px) {
+  .settings-screen {
+    margin: 0 auto;
+  }
+}

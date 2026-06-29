@@ -1,0 +1,387 @@
+/* ============================================================
+   Stamp Sheet & Result Styles
+   スタンプシート＆結果画面のスタイル
+   ============================================================ */
+
+/* ---------- Stamp Screen ---------- */
+.stamp-screen {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-md);
+  padding-top: calc(var(--safe-top) + var(--space-md));
+  padding-bottom: calc(var(--safe-bottom) + var(--space-md));
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    hsl(45, 80%, 92%) 0%,
+    hsl(30, 70%, 94%) 50%,
+    hsl(340, 60%, 94%) 100%
+  );
+}
+
+/* ---------- Result Overlay ---------- */
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 10, 40, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeIn 300ms ease forwards;
+  padding: var(--space-lg);
+}
+
+/* Result stamp image */
+.result-stamp {
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: stampSlam 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.result-stamp svg,
+.result-stamp img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes stampSlam {
+  0% {
+    transform: scale(3) rotate(-15deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(0.9) rotate(2deg);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.08) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Congratulation text */
+.result-text {
+  font-size: 1.6rem;
+  font-weight: 900;
+  text-align: center;
+  margin-top: var(--space-lg);
+  background: linear-gradient(
+    90deg,
+    hsl(0, 80%, 65%),
+    hsl(45, 90%, 55%),
+    hsl(120, 65%, 50%),
+    hsl(200, 80%, 55%),
+    hsl(280, 70%, 60%),
+    hsl(0, 80%, 65%)
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowShift 3s linear infinite;
+}
+
+@keyframes rainbowShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+.result-sub-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: var(--space-sm);
+  text-align: center;
+}
+
+.result-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+/* ---------- Stamp Sheet ---------- */
+.stamp-sheet-header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: var(--space-md);
+}
+
+.stamp-sheet-header h2 {
+  color: var(--color-text);
+}
+
+.stamp-sheet-progress {
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  margin-top: var(--space-xs);
+}
+
+.stamp-sheet {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+/* Grid columns based on stamp count */
+.stamp-sheet[data-cols="5"] {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.stamp-sheet[data-cols="10"] {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.stamp-sheet[data-cols="20"] {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+/* ---------- Stamp Cell ---------- */
+.stamp-cell {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform var(--transition-fast);
+  overflow: hidden;
+}
+
+.stamp-cell.empty {
+  border: 2.5px dashed rgba(150, 120, 180, 0.3);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.stamp-cell.filled {
+  background: rgba(255, 255, 255, 0.85);
+  border: 2.5px solid rgba(150, 120, 180, 0.2);
+  box-shadow: var(--shadow-sm);
+  animation: stampPopIn 400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.stamp-cell.filled svg,
+.stamp-cell.filled img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
+
+.stamp-cell.current {
+  border: 2.5px solid var(--color-primary);
+  animation: currentCellPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes currentCellPulse {
+  0%, 100% {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.3);
+  }
+  50% {
+    border-color: var(--color-primary-light);
+    box-shadow: 0 0 0 6px rgba(124, 58, 237, 0);
+  }
+}
+
+@keyframes stampPopIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Cell number badge */
+.stamp-cell-number {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(150, 120, 180, 0.45);
+}
+
+/* ---------- Reward Ticket ---------- */
+.reward-ticket {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  margin: var(--space-xl) auto 0;
+  padding: var(--space-xl) var(--space-lg);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    135deg,
+    hsl(42, 90%, 65%) 0%,
+    hsl(38, 95%, 55%) 40%,
+    hsl(45, 90%, 60%) 100%
+  );
+  border: 3px dashed hsl(38, 80%, 45%);
+  box-shadow:
+    0 8px 32px rgba(200, 150, 20, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  text-align: center;
+  overflow: hidden;
+  animation: scaleIn 500ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Shimmer effect */
+.reward-ticket::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.15) 55%,
+    transparent 70%
+  );
+  animation: ticketShimmer 3s ease-in-out infinite;
+}
+
+@keyframes ticketShimmer {
+  0%   { transform: translateX(-100%) rotate(25deg); }
+  100% { transform: translateX(100%) rotate(25deg); }
+}
+
+/* Sparkle border dots */
+.reward-ticket::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px dotted rgba(255, 255, 255, 0.35);
+  border-radius: calc(var(--radius-xl) - 4px);
+  pointer-events: none;
+}
+
+/* Perforated edges */
+.reward-ticket-edge {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: var(--color-bg);
+  border-radius: var(--radius-full);
+}
+
+.reward-ticket-edge.left {
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.reward-ticket-edge.right {
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.reward-ticket-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: hsl(38, 60%, 30%);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
+
+.reward-ticket-content {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: hsl(30, 50%, 18%);
+  margin-top: var(--space-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.reward-ticket-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-sm);
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Confetti Canvas ---------- */
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+/* ---------- Completed Sheets Counter ---------- */
+.completed-sheets {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  margin-top: var(--space-md);
+}
+
+.completed-sheets-icon {
+  font-size: 1.1rem;
+}
+
+/* ---------- Stamp Sheet Actions ---------- */
+.stamp-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  width: 100%;
+  max-width: 360px;
+}
+
+.stamp-actions .btn {
+  flex: 1;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 360px) {
+  .stamp-sheet {
+    gap: 6px;
+  }
+
+  .stamp-cell {
+    border-radius: var(--radius-sm);
+  }
+
+  .reward-ticket {
+    padding: var(--space-lg) var(--space-md);
+  }
+}
+
+@media (min-width: 481px) {
+  .stamp-screen {
+    margin: 0 auto;
+  }
+}

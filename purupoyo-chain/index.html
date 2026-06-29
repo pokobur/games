@@ -1218,12 +1218,10 @@
                     // The highest remaining block row
                     const highestRemainingRow = ROWS - colBlocks.length;
                     
-                    // Spawn new blocks vertically above the highest remaining slot
-                    // The new blocks will occupy row indices [highestRemainingRow - count] up to [highestRemainingRow - 1]
+                    // Spawn new blocks vertically stacked above startYThreshold to drop them under gravity
                     for (let i = 0; i < count; i++) {
                         const logicalRow = highestRemainingRow - count + i;
-                        // Use exact grid target coordinates for spacing without overlaps
-                        const y = startYThreshold + logicalRow * CELL_HEIGHT + CELL_HEIGHT / 2;
+                        const y = startYThreshold - (count - i) * CELL_HEIGHT - CELL_HEIGHT / 2;
                         
                         const b = createBlock(x, y);
                         b.column = col;
@@ -2435,11 +2433,12 @@
                     ctx.stroke();
                 }
                 
-                if (pendingGarbageCount > 6) {
-                    ctx.font = '900 11px "M PLUS Rounded 1c"';
-                    ctx.strokeText(`+${Math.ceil(pendingGarbageCount - 6)}`, 205 + 6 * 16, 198);
-                    ctx.fillText(`+${Math.ceil(pendingGarbageCount - 6)}`, 205 + 6 * 16, 198);
-                }
+                // Always draw exact total count text after the icons (avoids text overlap)
+                ctx.font = '900 11px "M PLUS Rounded 1c"';
+                const countText = `(計 ${Math.ceil(pendingGarbageCount)}個)`;
+                ctx.strokeText(countText, 205 + iconCount * 16 + 5, 198);
+                ctx.fillText(countText, 205 + iconCount * 16 + 5, 198);
+                
                 ctx.restore();
             }
 
@@ -2761,7 +2760,7 @@
                             // Enforce strict column axis bounds during other states
                             const targetX = 20 + b.column * CELL_WIDTH + CELL_WIDTH / 2;
                             const targetY = startYThreshold + b.row * CELL_HEIGHT + CELL_HEIGHT / 2;
-                            if (b.position.y >= targetY - 3.0 || b.speed < 0.25) {
+                            if (b.position.y >= targetY - 3.0 || (b.position.y >= targetY - 15.0 && b.speed < 0.25)) {
                                 Matter.Body.setPosition(b, { x: targetX, y: targetY });
                                 Matter.Body.setVelocity(b, { x: 0, y: 0 });
                                 Matter.Sleeping.set(b, true);
@@ -2776,6 +2775,14 @@
 
             // Clear Screen
             ctx.clearRect(0, 0, 450, 700);
+
+            // Save context for screen shake
+            ctx.save();
+            if (playerShake > 0) {
+                const dx = (Math.random() - 0.5) * playerShake * 2.0;
+                const dy = (Math.random() - 0.5) * playerShake * 2.0;
+                ctx.translate(dx, dy);
+            }
 
             // Draw Board Outline and backgrounds
             drawBoardOutline(ctx);
@@ -3002,7 +3009,7 @@
                     }
                 }
 
-                if (allSettled || waitSettleSafetyTimer >= 60) {
+                if (allSettled || waitSettleSafetyTimer >= 180) {
                     settleFrameCounter++;
                     if (settleFrameCounter >= 2) { // 2 frames of stable quietness to check matches
                         checkAndExecuteMatches();
@@ -3093,8 +3100,8 @@
 
                                 for (let i = 0; i < numToDrop; i++) {
                                     const logicalRow = highestRemainingRow - numToDrop + i;
-                                    // Use exact grid target coordinates for spacing without overlaps
-                                    const y = startYThreshold + logicalRow * CELL_HEIGHT + CELL_HEIGHT / 2;
+                                    // Spawn stacked above startYThreshold to drop them under gravity
+                                    const y = startYThreshold - (numToDrop - i) * CELL_HEIGHT - CELL_HEIGHT / 2;
 
                                     const b = createBlock(x, y, 'gray');
                                     b.column = col;
@@ -3134,7 +3141,7 @@
             }
 
             // Danger line checking (filters spawned falling blocks above the screen)
-            if (gameState === STATE_IDLE || gameState === STATE_WAIT_SETTLE) {
+            if (gameState === STATE_IDLE || gameState === STATE_DRAGGING) {
                 let blockOverflowing = false;
                 for (let i = 0; i < blocks.length; i++) {
                     const b = blocks[i];
@@ -3201,6 +3208,9 @@
                 ctx.fillRect(0, 0, 450, 700);
                 ctx.restore();
             }
+
+            // Restore canvas transformation from screen shake
+            ctx.restore();
 
             requestAnimationFrame(gameLoop);
         }

@@ -5,6 +5,7 @@ import { RouletteGame } from './games/roulette.js';
 import { TreasureGame } from './games/treasure.js';
 import { BalloonGame } from './games/balloon.js';
 import { AmidakujiGame } from './games/amidakuji.js';
+import { BarrelGame } from './games/barrel.js';
 
 export const gameSpecs = {
     race: {
@@ -36,5 +37,11 @@ export const gameSpecs = {
         icon: '🪜',
         rules: '好きな場所にドラッグで横線を引くことができるよ！<br>準備ができたら「スタート」を押そう。<br>キャラクターが線をたどってゴールまで走るよ！',
         GameClass: AmidakujiGame
+    },
+    barrel: {
+        title: '<ruby>タルききいっぱつ！<rt>たるききいっぱつ！</rt></ruby>',
+        icon: '🛢️',
+        rules: 'ハズレの穴に剣を刺すとどうぶつが飛び出すよ！<br>交代でタルの穴をタップしてね。<br>どうぶつを飛ばしてしまった人が、次の順位になるよ！',
+        GameClass: BarrelGame
     }
 };

@@ -122,6 +122,37 @@ function playSound(type) {
             noise.stop(t + 0.5);
             break;
         }
+        case 'sword': { // ザシュッ・カチッ（剣が刺さる音）
+            const osc1 = state.audioCtx.createOscillator();
+            const osc2 = state.audioCtx.createOscillator();
+            const gain1 = state.audioCtx.createGain();
+            const gain2 = state.audioCtx.createGain();
+            
+            // 刺さる摩擦音 (低めの三角波スライド)
+            osc1.type = 'triangle';
+            osc1.frequency.setValueAtTime(450, t);
+            osc1.frequency.exponentialRampToValueAtTime(90, t + 0.12);
+            gain1.gain.setValueAtTime(0.25, t);
+            gain1.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
+            
+            // 奥で固定される金属音
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(900, t + 0.05);
+            osc2.frequency.setValueAtTime(1400, t + 0.08);
+            gain2.gain.setValueAtTime(0.15, t + 0.05);
+            gain2.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+            
+            osc1.connect(gain1);
+            gain1.connect(state.masterGainNode);
+            osc2.connect(gain2);
+            gain2.connect(state.masterGainNode);
+            
+            osc1.start(t);
+            osc1.stop(t + 0.13);
+            osc2.start(t + 0.05);
+            osc2.stop(t + 0.16);
+            break;
+        }
         case 'drumroll': { // ドロロロ（ドラムロール）
             // テンションを高める細かなパルス
             const duration = 1.0;

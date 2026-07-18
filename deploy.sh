@@ -60,6 +60,13 @@ npm run build
 cp -r dist ../_site/kodomo-timer
 cd ..
 
+echo "🎲 コロコロサイコロ (korokoro-dice) をビルド中..."
+cd korokoro-dice
+npm install
+npm run build
+cp -r dist ../_site/korokoro-dice
+cd ..
+
 echo "☁️ GitHubの gh-pages ブランチにプッシュしています..."
 # 元のリポジトリURLを取得
 REMOTE_URL=$(git config --get remote.origin.url)

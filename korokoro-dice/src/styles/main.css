@@ -1,0 +1,837 @@
+@import "tailwindcss";
+
+/* ========================================
+   カスタムテーマ (Tailwind CSS v4)
+   ======================================== */
+@theme {
+  --font-family-rounded: 'M PLUS Rounded 1c', sans-serif;
+
+  --color-candy-pink: #FF6B9D;
+  --color-candy-orange: #FF9A56;
+  --color-candy-yellow: #FFD93D;
+  --color-candy-green: #6BCB77;
+  --color-candy-blue: #4D96FF;
+  --color-candy-purple: #9B59B6;
+
+  --color-bg-start: #FFF5E1;
+  --color-bg-end: #FFE0F0;
+
+  --color-dice-white: #FFFFFF;
+  --color-dice-shadow: #E0C8A8;
+  --color-dice-dot: #3D3D3D;
+
+  --color-btn-roll-start: #FF6B9D;
+  --color-btn-roll-end: #FF9A56;
+  --color-btn-roll-shadow: #CC4477;
+}
+
+/* ========================================
+   ベースリセット & グローバル
+   ======================================== */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  height: 100dvh;
+  font-family: var(--font-family-rounded);
+  touch-action: manipulation;
+}
+
+body {
+  background: linear-gradient(135deg, var(--color-bg-start), var(--color-bg-end));
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ========================================
+   スプラッシュ画面
+   ======================================== */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FFE0F0, #FFF5E1, #E0F0FF);
+  background-size: 300% 300%;
+  animation: splash-bg 4s ease infinite;
+  gap: 2rem;
+}
+
+@keyframes splash-bg {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.splash-title {
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--color-candy-pink), var(--color-candy-orange), var(--color-candy-yellow));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: splash-title-bounce 2s ease-in-out infinite;
+  text-align: center;
+  line-height: 1.3;
+}
+
+@keyframes splash-title-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.03); }
+}
+
+.splash-dice-preview {
+  display: flex;
+  gap: 1rem;
+  animation: splash-dice-float 3s ease-in-out infinite;
+}
+
+@keyframes splash-dice-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+
+.splash-dice-mini {
+  width: 60px;
+  height: 60px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 0 var(--color-dice-shadow), 0 6px 16px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--color-candy-pink);
+}
+
+.splash-start-btn {
+  font-family: var(--font-family-rounded);
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  font-weight: 900;
+  color: white;
+  background: linear-gradient(135deg, var(--color-btn-roll-start), var(--color-btn-roll-end));
+  border: none;
+  border-radius: 24px;
+  padding: 18px 48px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 var(--color-btn-roll-shadow), 0 8px 20px rgba(255,107,157,0.3);
+  transform: translateY(0);
+  transition: transform 0.1s, box-shadow 0.1s;
+  min-height: 64px;
+}
+
+.splash-start-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--color-btn-roll-shadow), 0 4px 12px rgba(255,107,157,0.2);
+}
+
+.splash-subtitle {
+  font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+  color: #999;
+  text-align: center;
+}
+
+.splash-exit {
+  animation: splash-exit 0.5s ease-in forwards;
+}
+
+@keyframes splash-exit {
+  to {
+    opacity: 0;
+    transform: scale(1.1);
+    pointer-events: none;
+  }
+}
+
+/* ========================================
+   メインレイアウト
+   ======================================== */
+.main-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  height: 100dvh;
+  padding: 12px;
+  gap: 8px;
+  opacity: 0;
+  animation: fade-in 0.5s ease-out 0.3s forwards;
+}
+
+@keyframes fade-in {
+  to { opacity: 1; }
+}
+
+/* ========================================
+   スコアボード (合計値表示)
+   ======================================== */
+.scoreboard {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.scoreboard-formula {
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  font-weight: 900;
+  color: #3D3D3D;
+  min-height: 1.6em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+}
+
+.scoreboard-formula.bounce {
+  animation: scoreboard-bounce 0.4s ease-out;
+}
+
+@keyframes scoreboard-bounce {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.scoreboard-label {
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  color: #999;
+  margin-top: 2px;
+}
+
+/* ========================================
+   サイコロエリア
+   ======================================== */
+.dice-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 4vw, 32px);
+  flex-wrap: wrap;
+  min-height: 0;
+  padding: 8px;
+}
+
+/* ========================================
+   3D サイコロ
+   ======================================== */
+.dice-scene {
+  perspective: 600px;
+  width: clamp(80px, 22vw, 130px);
+  height: clamp(80px, 22vw, 130px);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.dice-cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dice-cube.rolling {
+  animation: dice-roll 0.15s linear infinite;
+}
+
+@keyframes dice-roll {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  25% { transform: rotateX(90deg) rotateY(45deg) rotateZ(30deg); }
+  50% { transform: rotateX(180deg) rotateY(135deg) rotateZ(90deg); }
+  75% { transform: rotateX(270deg) rotateY(225deg) rotateZ(150deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(180deg); }
+}
+
+.dice-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-dice-white);
+  border-radius: clamp(10px, 3vw, 18px);
+  border: 2px solid rgba(0,0,0,0.06);
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.04);
+  backface-visibility: hidden;
+  font-weight: 900;
+}
+
+.dice-face-content {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.dice-face-content.is-number {
+  background: linear-gradient(135deg, var(--color-candy-pink), var(--color-candy-purple));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 6面の配置 */
+.dice-face--1 { transform: rotateY(0deg)    translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
+.dice-face--2 { transform: rotateY(180deg)  translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
+.dice-face--3 { transform: rotateY(90deg)   translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
+.dice-face--4 { transform: rotateY(-90deg)  translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
+.dice-face--5 { transform: rotateX(90deg)   translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
+.dice-face--6 { transform: rotateX(-90deg)  translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
+
+/* サイコロの地面の影 */
+.dice-shadow {
+  width: 70%;
+  height: 12px;
+  margin: 8px auto 0;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.dice-shadow.rolling {
+  animation: shadow-pulse 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes shadow-pulse {
+  0% { transform: scaleX(0.8); opacity: 0.5; }
+  100% { transform: scaleX(1.2); opacity: 0.8; }
+}
+
+/* サイコロ登場アニメーション */
+.dice-enter {
+  animation: dice-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes dice-enter {
+  0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.dice-exit {
+  animation: dice-exit 0.3s ease-in forwards;
+}
+
+@keyframes dice-exit {
+  to { transform: scale(0) rotate(30deg); opacity: 0; }
+}
+
+/* ========================================
+   コントロールパネル
+   ======================================== */
+.control-panel {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+  font-weight: 700;
+  color: #888;
+  white-space: nowrap;
+  min-width: 5em;
+  text-align: right;
+}
+
+.control-options {
+  display: flex;
+  gap: 6px;
+}
+
+.control-btn {
+  font-family: var(--font-family-rounded);
+  font-size: clamp(0.85rem, 2.8vw, 1rem);
+  font-weight: 700;
+  color: #666;
+  background: rgba(255,255,255,0.8);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 8px 16px;
+  min-height: 44px;
+  min-width: 44px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+  transform: translateY(0);
+  transition: all 0.12s ease;
+}
+
+.control-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+}
+
+.control-btn.active {
+  color: white;
+  background: linear-gradient(135deg, var(--color-candy-blue), var(--color-candy-purple));
+  border-color: transparent;
+  box-shadow: 0 3px 0 rgba(77,150,255,0.3);
+}
+
+.sensor-btn {
+  font-family: var(--font-family-rounded);
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+  font-weight: 700;
+  color: var(--color-candy-green);
+  background: rgba(107,203,119,0.12);
+  border: 2px dashed var(--color-candy-green);
+  border-radius: 14px;
+  padding: 8px 14px;
+  min-height: 44px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sensor-btn:active {
+  transform: scale(0.96);
+}
+
+.sensor-btn.granted {
+  color: white;
+  background: var(--color-candy-green);
+  border-style: solid;
+}
+
+/* ========================================
+   ロールボタン
+   ======================================== */
+.roll-btn-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px 16px;
+}
+
+.roll-btn {
+  font-family: var(--font-family-rounded);
+  width: 100%;
+  max-width: 400px;
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
+  font-weight: 900;
+  color: white;
+  background: linear-gradient(135deg, var(--color-btn-roll-start), var(--color-btn-roll-end));
+  border: none;
+  border-radius: 22px;
+  padding: 18px 32px;
+  min-height: 64px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 var(--color-btn-roll-shadow), 0 8px 24px rgba(255,107,157,0.25);
+  transform: translateY(0);
+  transition: transform 0.1s, box-shadow 0.1s, opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  position: relative;
+  overflow: hidden;
+}
+
+.roll-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.roll-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--color-btn-roll-shadow), 0 4px 12px rgba(255,107,157,0.2);
+}
+
+.roll-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.roll-btn-icon {
+  display: inline-block;
+  font-size: 1.2em;
+}
+
+.roll-btn-icon.spinning {
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   ぞろ目演出オーバーレイ
+   ======================================== */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: celebration-in 0.3s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes celebration-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.celebration-card {
+  background: white;
+  border-radius: 28px;
+  padding: 32px 40px;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+  animation: celebration-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 85vw;
+}
+
+@keyframes celebration-pop {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.celebration-emoji {
+  font-size: clamp(3rem, 12vw, 5rem);
+  animation: celebration-shake 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes celebration-shake {
+  0% { transform: rotate(-5deg) scale(1); }
+  100% { transform: rotate(5deg) scale(1.05); }
+}
+
+.celebration-title {
+  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--color-candy-pink), var(--color-candy-orange), var(--color-candy-yellow));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 12px 0 8px;
+}
+
+.celebration-sub {
+  font-size: clamp(0.9rem, 3vw, 1.2rem);
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.celebration-dismiss {
+  font-family: var(--font-family-rounded);
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--color-candy-blue), var(--color-candy-purple));
+  border: none;
+  border-radius: 16px;
+  padding: 12px 32px;
+  min-height: 48px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(77,60,180,0.3);
+  transform: translateY(0);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.celebration-dismiss:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(77,60,180,0.3);
+}
+
+.celebration-exit {
+  animation: celebration-exit 0.3s ease-in forwards;
+}
+
+@keyframes celebration-exit {
+  to { opacity: 0; transform: scale(0.95); pointer-events: none; }
+}
+
+/* ========================================
+   ロール履歴
+   ======================================== */
+.roll-history {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.roll-history-label {
+  font-size: clamp(0.65rem, 2vw, 0.8rem);
+  font-weight: 700;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.roll-history-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.roll-history-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.roll-history-card {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.roll-history-card-enter {
+  animation: history-card-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes history-card-enter {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.roll-history-faces {
+  font-weight: 700;
+}
+
+.roll-history-sum {
+  color: var(--color-candy-pink);
+  font-weight: 900;
+  font-size: 0.85em;
+}
+
+.roll-history-empty {
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+  color: #ccc;
+  white-space: nowrap;
+}
+
+/* ========================================
+   もくひょうゲーム
+   ======================================== */
+.target-game {
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 2px solid rgba(255,154,86,0.2);
+}
+
+.target-game-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.target-game-label {
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  font-weight: 900;
+  color: var(--color-candy-orange);
+  white-space: nowrap;
+}
+
+.target-game-targets {
+  display: flex;
+  gap: 6px;
+}
+
+.target-game-targets .control-btn {
+  padding: 6px 14px;
+  min-height: 36px;
+  font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+}
+
+.target-game-bar {
+  width: 100%;
+  height: 20px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.target-game-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-candy-yellow), var(--color-candy-orange));
+  border-radius: 10px;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+.target-game-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent);
+  border-radius: inherit;
+}
+
+.target-game-fill.exact {
+  background: linear-gradient(90deg, var(--color-candy-yellow), var(--color-candy-green));
+  animation: fill-glow 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes fill-glow {
+  from { box-shadow: 0 0 8px rgba(107,203,119,0.4); }
+  to { box-shadow: 0 0 16px rgba(107,203,119,0.7); }
+}
+
+.target-game-fill.bust {
+  background: linear-gradient(90deg, var(--color-candy-orange), var(--color-candy-pink));
+}
+
+.target-game-status {
+  text-align: center;
+}
+
+.target-game-total {
+  font-size: clamp(1.3rem, 4.5vw, 1.8rem);
+  font-weight: 900;
+  color: #3D3D3D;
+}
+
+.target-game-message {
+  font-size: clamp(0.85rem, 2.8vw, 1.05rem);
+  font-weight: 700;
+  color: var(--color-candy-orange);
+  margin-top: 2px;
+}
+
+.target-game-rollcount {
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.target-game-reset {
+  font-family: var(--font-family-rounded);
+  font-size: clamp(0.9rem, 3vw, 1.1rem);
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--color-candy-blue), var(--color-candy-purple));
+  border: none;
+  border-radius: 14px;
+  padding: 10px 24px;
+  min-height: 44px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(77,60,180,0.3);
+  transform: translateY(0);
+  transition: transform 0.1s, box-shadow 0.1s;
+  animation: celebration-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.target-game-reset:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(77,60,180,0.3);
+}
+
+/* ========================================
+   レスポンシブ
+   ======================================== */
+@media (min-width: 768px) {
+  .main-app {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+    gap: 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .main-app {
+    max-width: 700px;
+    padding: 24px;
+    gap: 16px;
+  }
+}
+
+/* ========================================
+   ランドスケープ対応
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  .main-app {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .scoreboard {
+    order: 1;
+    width: 100%;
+    padding: 6px 12px;
+  }
+
+  .dice-area {
+    order: 2;
+    flex: 1;
+    min-width: 50%;
+  }
+
+  .control-panel {
+    order: 3;
+    flex: 0 0 auto;
+  }
+
+  .roll-btn-wrapper {
+    order: 4;
+    padding: 4px 8px;
+    flex: 0 0 auto;
+  }
+
+  .dice-scene {
+    width: clamp(60px, 15vw, 90px);
+    height: clamp(60px, 15vw, 90px);
+  }
+}

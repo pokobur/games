@@ -67,6 +67,15 @@ npm run build
 cp -r dist ../_site/korokoro-dice
 cd ..
 
+if [ -d "money-tree" ]; then
+  echo "🌳 マネーツリー (money-tree) をビルド中..."
+  cd money-tree
+  npm install
+  npm run build
+  cp -r dist ../_site/money-tree
+  cd ..
+fi
+
 echo "☁️ GitHubの gh-pages ブランチにプッシュしています..."
 # 元のリポジトリURLを取得
 REMOTE_URL=$(git config --get remote.origin.url)

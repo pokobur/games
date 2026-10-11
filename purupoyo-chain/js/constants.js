@@ -65,7 +65,7 @@ const BUBBLE_COLORS = {
     }
 };
 
-const COLOR_NAMES_BASE = ['red', 'blue', 'green', 'yellow'];
+const COLOR_NAMES_BASE = ['red', 'blue', 'green', 'yellow', 'purple'];
 
 // State Machine Constants
 const STATE_TITLE = 'title';
@@ -86,17 +86,17 @@ const STATE_BOSS_DEFEATED = 'boss_defeated';
 const MODE_STAGE = 'stage';
 const MODE_ENDLESS = 'endless';
 
-// Monsters Catalogue
+// Monsters Catalogue with Turn Intervals (Puzzle & Dragons style turn-based mechanics)
 const MONSTERS = [
-    { name: "ぷるスライム", maxHP: 200, type: "slime", expReward: 100 },
-    { name: "バタコウモリ", maxHP: 420, type: "bat", expReward: 250 },
-    { name: "モグおばけ", maxHP: 850, type: "ghost", expReward: 500 },
-    { name: "カンゴブリン", maxHP: 1600, type: "goblin", expReward: 1000 },
-    { name: "ぽよキング", maxHP: 3200, type: "king_slime", expReward: 2500 }
+    { name: "ぷるスライム", maxHP: 200, type: "slime", expReward: 100, turnInterval: 3 },
+    { name: "バタコウモリ", maxHP: 420, type: "bat", expReward: 250, turnInterval: 2 },
+    { name: "モグおばけ", maxHP: 850, type: "ghost", expReward: 500, turnInterval: 2 },
+    { name: "カンゴブリン", maxHP: 1600, type: "goblin", expReward: 1000, turnInterval: 2 },
+    { name: "ぽよキング", maxHP: 3200, type: "king_slime", expReward: 2500, turnInterval: 2 }
 ];
 
 // Gameplay limits & timing
-const dragDurationLimit = 8000;    // 8 seconds
+const dragDurationLimit = 7000;    // 7 seconds (Comfortable Pad-style route solving)
 const dangerLimitFrames = 180;     // 3 seconds in danger line
 const feverDurationFrames = 720;   // 12 seconds
 const BURST_MAX = 100;             // Burst gauge 100%

@@ -738,6 +738,35 @@ function drawBattleArena(ctx) {
         drawMonster(ctx, 225, 146, currentMonster.type, time);
     }
 
+    // 3.5. Enemy Turn Countdown Badge (Puzzle & Dragons style: "あと 2", "⚠️ あと 1")
+    if (currentMonster && monsterHP > 0 && gameState !== STATE_BOSS_DEFEATED) {
+        ctx.save();
+        const badgeX = 345;
+        const badgeY = 142;
+        const turnsLeft = (typeof enemyTurnCounter !== 'undefined') ? enemyTurnCounter : 2;
+        const isUrgent = (turnsLeft <= 1);
+        const pulse = isUrgent ? Math.sin(time / 100) * 1.5 : 0;
+
+        ctx.fillStyle = isUrgent ? '#ef4444' : '#0284c7';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = isUrgent ? 'rgba(239, 68, 68, 0.6)' : 'rgba(2, 132, 199, 0.4)';
+        ctx.shadowBlur = isUrgent ? 8 : 4;
+
+        ctx.beginPath();
+        ctx.roundRect(badgeX - 42 - pulse, badgeY - 14 - pulse, 84 + pulse * 2, 28 + pulse * 2, 14);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.font = '900 12.5px "M PLUS Rounded 1c"';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        const turnText = isUrgent ? "⚠️ あと 1" : `あと ${turnsLeft}`;
+        ctx.fillText(turnText, badgeX, badgeY + 4.5);
+        ctx.restore();
+    }
+
     // 4. Pending Garbage Icons & Precise Count Text (Puyo Puyo style)
     if (pendingGarbageCount > 0) {
         ctx.save();

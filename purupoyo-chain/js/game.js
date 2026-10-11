@@ -57,6 +57,7 @@ let totalBlocksPopped = 0;
 let monsterHP = 200;
 let monsterMaxHP = 200;
 let currentMonster = null;
+let enemyTurnCounter = 2; // Puzzle & Dragons style turn-based countdown
 let monsterShake = 0;
 let monsterFlash = 0;
 let playerShake = 0;
@@ -110,7 +111,8 @@ function getMonsterForStage(stg) {
     return {
         name: loop > 0 ? `${base.name} Lv.${loop + 1}` : base.name,
         maxHP: Math.round(base.maxHP * hpMultiplier),
-        type: base.type
+        type: base.type,
+        turnInterval: base.turnInterval || 2
     };
 }
 
@@ -120,9 +122,115 @@ function initializeMonsterForStage(stg) {
     monsterHP = monsterMaxHP;
     monsterDisplayHP = monsterMaxHP;
     monsterDamageChipHP = monsterMaxHP;
+    enemyTurnCounter = currentMonster.turnInterval || 2;
+    pendingGarbageCount = 0;
 }
 
-// Pre-fill board with initial blocks
+function getGarbageCountForStage() {
+    let baseGarbage = 3;
+    if (stage === 2) baseGarbage = 5;
+    else if (stage === 3) baseGarbage = 7;
+    else if (stage === 4) baseGarbage = 10;
+    else if (stage === 5) baseGarbage = 14;
+    else if (stage >= 6) baseGarbage = 14 + (stage - 5) * 3;
+    return baseGarbage;
+}
+
+// Grid-based Orthogonal BFS Match Checker (4+ connected blocks)
+function findGridMatches() {
+    const grid = Array(COLS).fill(null).map(() => Array(ROWS).fill(null));
+    for (let i = 0; i < blocks.length; i++) {
+        const b = blocks[i];
+        if (!b.isMatching && b.column >= 0 && b.column < COLS && b.row >= 0 && b.row < ROWS) {
+            grid[b.column][b.row] = b;
+        }
+    }
+
+    const visited = Array(COLS).fill(null).map(() => Array(ROWS).fill(false));
+    const matchedGroups = [];
+
+    for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS; r++) {
+            const b = grid[c][r];
+            if (!b || visited[c][r] || b.colorName === 'gray') continue;
+
+            const targetColor = b.colorName;
+            const group = [];
+            const queue = [{ c, r }];
+            visited[c][r] = true;
+
+            while (queue.length > 0) {
+                const curr = queue.shift();
+                const currBlock = grid[curr.c][curr.r];
+                group.push(currBlock);
+
+                const neighbors = [
+                    { c: curr.c - 1, r: curr.r },
+                    { c: curr.c + 1, r: curr.r },
+                    { c: curr.c, r: curr.r - 1 },
+                    { c: curr.c, r: curr.r + 1 }
+                ];
+
+                for (let i = 0; i < neighbors.length; i++) {
+                    const nc = neighbors[i].c;
+                    const nr = neighbors[i].r;
+                    if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) {
+                        const nb = grid[nc][nr];
+                        if (!visited[nc][nr] && nb && nb.colorName === targetColor && !nb.isMatching) {
+                            visited[nc][nr] = true;
+                            queue.push({ c: nc, r: nr });
+                        }
+                    }
+                }
+            }
+
+            if (group.length >= 4) {
+                matchedGroups.push(group);
+            }
+        }
+    }
+
+    return matchedGroups;
+}
+
+// Global Match Checker (returns true if any 4+ group exists)
+function checkForAnyMatch() {
+    return findGridMatches().length > 0;
+}
+
+// Find Gray Garbage Blocks adjacent to popped groups (Puyo Puyo Rule)
+function findAdjacentGrayBlocks(matchedGroups) {
+    const grid = Array(COLS).fill(null).map(() => Array(ROWS).fill(null));
+    for (let i = 0; i < blocks.length; i++) {
+        const b = blocks[i];
+        if (!b.isMatching && b.column >= 0 && b.column < COLS && b.row >= 0 && b.row < ROWS) {
+            grid[b.column][b.row] = b;
+        }
+    }
+
+    const grayToPop = new Set();
+    matchedGroups.forEach(group => {
+        group.forEach(b => {
+            const neighbors = [
+                { c: b.column - 1, r: b.row },
+                { c: b.column + 1, r: b.row },
+                { c: b.column, r: b.row - 1 },
+                { c: b.column, r: b.row + 1 }
+            ];
+            neighbors.forEach(n => {
+                if (n.c >= 0 && n.c < COLS && n.r >= 0 && n.r < ROWS) {
+                    const nb = grid[n.c][n.r];
+                    if (nb && nb.colorName === 'gray' && !nb.isMatching) {
+                        grayToPop.add(nb);
+                    }
+                }
+            });
+        });
+    });
+    return Array.from(grayToPop);
+}
+
+// Pre-fill board with initial blocks (Guaranteed 0-Match stationary board like Puzzle & Dragons)
 function dropInitialBlocks() {
     blocks.forEach(b => World.remove(world, b));
     blocks = [];
@@ -133,103 +241,98 @@ function dropInitialBlocks() {
 
     initializeMonsterForStage(stage);
 
+    const grid = [];
+    for (let c = 0; c < COLS; c++) {
+        grid[c] = [];
+        for (let r = 0; r < ROWS; r++) {
+            grid[c][r] = null;
+        }
+    }
+
+    // Function to check if placing color at (c, r) forms a 4-connected group
+    function formsFourGroup(col, row, colorName) {
+        grid[col][row] = colorName;
+        const visited = Array(COLS).fill(null).map(() => Array(ROWS).fill(false));
+        const queue = [{ c: col, r: row }];
+        visited[col][row] = true;
+        let count = 0;
+
+        while (queue.length > 0) {
+            const curr = queue.shift();
+            count++;
+            if (count >= 4) {
+                grid[col][row] = null;
+                return true;
+            }
+
+            const neighbors = [
+                { c: curr.c - 1, r: curr.r },
+                { c: curr.c + 1, r: curr.r },
+                { c: curr.c, r: curr.r - 1 },
+                { c: curr.c, r: curr.r + 1 }
+            ];
+
+            for (let i = 0; i < neighbors.length; i++) {
+                const nc = neighbors[i].c;
+                const nr = neighbors[i].r;
+                if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) {
+                    if (!visited[nc][nr] && grid[nc][nr] === colorName) {
+                        visited[nc][nr] = true;
+                        queue.push({ c: nc, r: nr });
+                    }
+                }
+            }
+        }
+        grid[col][row] = null;
+        return false;
+    }
+
+    // Fill grid cell by cell avoiding 4-matches
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const availableColors = [...COLOR_NAMES_BASE].sort(() => Math.random() - 0.5);
+            let chosenColor = availableColors[0];
+            for (let i = 0; i < availableColors.length; i++) {
+                if (!formsFourGroup(c, r, availableColors[i])) {
+                    chosenColor = availableColors[i];
+                    break;
+                }
+            }
+            grid[c][r] = chosenColor;
+        }
+    }
+
+    // Create physics bodies at exact resting grid coordinates
     for (let col = 0; col < COLS; col++) {
         for (let row = 0; row < ROWS; row++) {
             const x = 20 + col * CELL_WIDTH + CELL_WIDTH / 2;
             const y = startYThreshold + row * CELL_HEIGHT + CELL_HEIGHT / 2;
-            const b = createBlock(x, y);
+            const b = createBlock(x, y, grid[col][row]);
             b.column = col;
             b.row = row;
+            Matter.Body.setVelocity(b, { x: 0, y: 0 });
+            Matter.Sleeping.set(b, true);
         }
     }
 
-    // Verify board has matches or is playable
-    let attempts = 0;
-    while (!checkForAnyMatch() && attempts < 20) {
-        const randB = blocks[Math.floor(Math.random() * blocks.length)];
-        const newColor = COLOR_NAMES_BASE[Math.floor(Math.random() * COLOR_NAMES_BASE.length)];
-        randB.colorName = newColor;
-        randB.colorInfo = BUBBLE_COLORS[newColor];
-        attempts++;
+    // Double check with match finder to guarantee 100% zero matches at start
+    let safety = 0;
+    while (findGridMatches().length > 0 && safety < 50) {
+        safety++;
+        const matches = findGridMatches();
+        matches.forEach(group => {
+            const blockToChange = group[Math.floor(Math.random() * group.length)];
+            const otherColors = COLOR_NAMES_BASE.filter(c => c !== blockToChange.colorName);
+            const newColor = otherColors[Math.floor(Math.random() * otherColors.length)];
+            blockToChange.colorName = newColor;
+            blockToChange.colorInfo = BUBBLE_COLORS[newColor];
+        });
     }
 }
 
-// Global Match Checker (excluding gray garbage blocks)
-function checkForAnyMatch() {
-    const visited = new Set();
-    const contactThreshold = 72;
-
-    for (let i = 0; i < blocks.length; i++) {
-        const b1 = blocks[i];
-        if (visited.has(b1.id) || b1.isMatching || b1.colorName === 'gray') continue;
-
-        const group = [b1];
-        visited.add(b1.id);
-        const queue = [b1];
-
-        while (queue.length > 0) {
-            const current = queue.shift();
-            for (let j = 0; j < blocks.length; j++) {
-                const b2 = blocks[j];
-                if (visited.has(b2.id) || b2.isMatching || b2.colorName === 'gray') continue;
-
-                if (current.colorName === b2.colorName) {
-                    const dx = current.position.x - b2.position.x;
-                    const dy = current.position.y - b2.position.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist <= contactThreshold) {
-                        visited.add(b2.id);
-                        group.push(b2);
-                        queue.push(b2);
-                    }
-                }
-            }
-        }
-        if (group.length >= 4) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Chain Match Resolver (Puyo Puyo compliant)
+// Chain Match Resolver (Puyo Puyo / Pad compliant)
 function checkAndExecuteMatches() {
-    const visited = new Set();
-    const groups = [];
-    const contactThreshold = 72;
-
-    for (let i = 0; i < blocks.length; i++) {
-        const b1 = blocks[i];
-        if (visited.has(b1.id) || b1.colorName === 'gray') continue;
-
-        const group = [b1];
-        visited.add(b1.id);
-        const queue = [b1];
-
-        while (queue.length > 0) {
-            const current = queue.shift();
-            for (let j = 0; j < blocks.length; j++) {
-                const b2 = blocks[j];
-                if (visited.has(b2.id) || b2.colorName === 'gray') continue;
-
-                if (current.colorName === b2.colorName) {
-                    const dx = current.position.x - b2.position.x;
-                    const dy = current.position.y - b2.position.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist <= contactThreshold) {
-                        visited.add(b2.id);
-                        group.push(b2);
-                        queue.push(b2);
-                    }
-                }
-            }
-        }
-        groups.push(group);
-    }
-
-    const matchedGroups = groups.filter(g => g.length >= 4);
+    const matchedGroups = findGridMatches();
 
     if (matchedGroups.length > 0) {
         let popCount = 0;
@@ -284,22 +387,7 @@ function checkAndExecuteMatches() {
         });
 
         // Adjacent gray garbage block popping (Puyo Puyo rule)
-        const grayBlocksToPop = new Set();
-        matchedGroups.forEach(group => {
-            group.forEach(matchedBlock => {
-                blocks.forEach(b => {
-                    if (b.colorName === 'gray' && !b.isMatching) {
-                        const dx = matchedBlock.position.x - b.position.x;
-                        const dy = matchedBlock.position.y - b.position.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist <= contactThreshold) {
-                            grayBlocksToPop.add(b);
-                        }
-                    }
-                });
-            });
-        });
-
+        const grayBlocksToPop = findAdjacentGrayBlocks(matchedGroups);
         grayBlocksToPop.forEach(gb => {
             gb.isMatching = true;
             gb.matchProgress = 0;
@@ -310,8 +398,8 @@ function checkAndExecuteMatches() {
             spawnParticles(gb.position.x, gb.position.y, gb.colorInfo);
         });
 
-        if (grayBlocksToPop.size > 0) {
-            blocks = blocks.filter(b => !grayBlocksToPop.has(b));
+        if (grayBlocksToPop.length > 0) {
+            blocks = blocks.filter(b => !grayBlocksToPop.includes(b));
             addFloatingText("おじゃま相殺消去!", 225, 360, '#cbd5e1');
         }
 
@@ -328,10 +416,10 @@ function checkAndExecuteMatches() {
         gameState = STATE_MATCHING;
         setTimeout(() => {
             refillBlocks(poppedColumns);
-        }, 45);
+        }, 50);
     } else {
         if (currentCombo > 0) {
-            addFloatingText("連鎖おわり！", 225, 400, '#ffffff', true);
+            addFloatingText(`${currentCombo}連鎖達成！`, 225, 400, '#ffffff', true);
         }
         currentCombo = 0;
 
@@ -507,7 +595,7 @@ function triggerStageClear() {
         document.getElementById('txt-stage').innerText = stage;
         dropInitialBlocks();
 
-        gameState = STATE_WAIT_SETTLE;
+        gameState = STATE_IDLE;
         settleFrameCounter = 0;
         waitSettleSafetyTimer = 0;
     }, 1800);
@@ -544,21 +632,6 @@ Matter.Events.on(mouseConstraint, 'startdrag', function(event) {
         if (gameState === STATE_IDLE) {
             gameState = STATE_DRAGGING;
             synth.playGrab();
-
-            // Queue Garbage in Stage Mode based on stage difficulty
-            if (gameMode === MODE_STAGE) {
-                let baseGarbage = 3;
-                if (stage === 2) baseGarbage = 6;
-                else if (stage === 3) baseGarbage = 10;
-                else if (stage === 4) baseGarbage = 15;
-                else if (stage === 5) baseGarbage = 21;
-                else if (stage >= 6) baseGarbage = 21 + (stage - 5) * 5;
-
-                const randomVariance = Math.floor(Math.random() * (stage + 1));
-                pendingGarbageCount = baseGarbage + randomVariance;
-            } else {
-                pendingGarbageCount = 0;
-            }
         }
     } else {
         mouseConstraint.body = null;
@@ -575,9 +648,18 @@ Matter.Events.on(mouseConstraint, 'enddrag', function() {
             gameState = STATE_IDLE;
             draggedBody = null;
             hasMovedThisTurn = false;
-            pendingGarbageCount = 0;
             return;
         }
+
+        // Snap all non-matching blocks cleanly into integer grid coordinates
+        blocks.forEach(b => {
+            if (!b.isMatching) {
+                const targetX = 20 + b.column * CELL_WIDTH + CELL_WIDTH / 2;
+                const targetY = startYThreshold + b.row * CELL_HEIGHT + CELL_HEIGHT / 2;
+                Matter.Body.setPosition(b, { x: targetX, y: targetY });
+                Matter.Body.setVelocity(b, { x: 0, y: 0 });
+            }
+        });
 
         gameState = STATE_WAIT_SETTLE;
         draggedBody = null;
@@ -738,16 +820,17 @@ function gameLoop() {
     ctx.clip();
 
     // Connecting bridges for identical adjacent blocks
-    const contactThreshold = 72;
     for (let i = 0; i < blocks.length; i++) {
         for (let j = i + 1; j < blocks.length; j++) {
             const b1 = blocks[i];
             const b2 = blocks[j];
             if (b1.colorName === b2.colorName && b1.colorName !== 'gray' && !b1.isMatching && !b2.isMatching) {
-                const dx = b1.position.x - b2.position.x;
-                const dy = b1.position.y - b2.position.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist <= contactThreshold) {
+                const isAdjacent = (Math.abs(b1.column - b2.column) + Math.abs(b1.row - b2.row) === 1);
+                if (isAdjacent) {
+                    const dx = b1.position.x - b2.position.x;
+                    const dy = b1.position.y - b2.position.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= 82) {
                     ctx.save();
                     ctx.beginPath();
                     ctx.moveTo(b1.position.x, b1.position.y);
@@ -764,6 +847,7 @@ function gameLoop() {
                     ctx.lineWidth = 9;
                     ctx.stroke();
                     ctx.restore();
+                    }
                 }
             }
         }
@@ -879,12 +963,39 @@ function gameLoop() {
         }
     }
 
-    // Wait Effects Phase
+    // Wait Effects Phase (Turn Resolution)
     if (gameState === STATE_WAIT_EFFECTS) {
         if (projectiles.length === 0 && animatingPops.length === 0) {
             if (hasMovedThisTurn) {
                 hasMovedThisTurn = false;
-                triggerMonsterAttack();
+
+                if (gameMode === MODE_STAGE) {
+                    if (monsterHP <= 0) {
+                        // Boss is defeated, let defeat animation proceed
+                        return;
+                    }
+
+                    // Turn Countdown Decrement (Puzzle & Dragons style)
+                    enemyTurnCounter--;
+
+                    if (enemyTurnCounter <= 0) {
+                        // Enemy Turn has arrived: unleash attack!
+                        pendingGarbageCount = getGarbageCountForStage();
+                        triggerMonsterAttack();
+                    } else {
+                        // Calm turn: enemy does not attack!
+                        addFloatingText(`敵の行動まで あと ${enemyTurnCounter} ターン！`, 225, 270, '#38bdf8', true);
+                        if (enemyTurnCounter === 1) {
+                            pendingGarbageCount = getGarbageCountForStage();
+                        } else {
+                            pendingGarbageCount = 0;
+                        }
+                        gameState = STATE_IDLE;
+                    }
+                } else {
+                    // Endless Mode
+                    gameState = STATE_IDLE;
+                }
             } else {
                 gameState = STATE_IDLE;
             }
@@ -963,6 +1074,7 @@ function gameLoop() {
 
         if (monsterAttackTimer >= 80) {
             pendingGarbageCount = 0;
+            enemyTurnCounter = currentMonster ? (currentMonster.turnInterval || 2) : 2;
             gameState = STATE_WAIT_SETTLE;
             settleFrameCounter = 0;
             waitSettleSafetyTimer = 0;
@@ -1070,7 +1182,7 @@ function handleCanvasPointer(clientX, clientY) {
             blocksPoppedThisStage = 0;
             document.getElementById('txt-stage').innerText = stage;
             dropInitialBlocks();
-            gameState = STATE_WAIT_SETTLE;
+            gameState = STATE_IDLE;
             settleFrameCounter = 0;
             waitSettleSafetyTimer = 0;
             synth.playGrab();
@@ -1096,7 +1208,7 @@ function startGame() {
     document.getElementById('txt-stage').innerText = stage;
 
     dropInitialBlocks();
-    gameState = STATE_WAIT_SETTLE;
+    gameState = STATE_IDLE;
     settleFrameCounter = 0;
     waitSettleSafetyTimer = 0;
 

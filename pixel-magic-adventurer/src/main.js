@@ -19,15 +19,15 @@ document.head.appendChild(styleEl);
 function handleResumeWip() {
   try {
     const wip = loadWipPuzzle();
-    if (wip) {
+    if (wip && wip.puzzleData) {
       navigate('puzzle');
-      puzzleScreen._initPuzzle(wip.puzzleData, wip.title);
+      puzzleScreen._initPuzzle(wip.puzzleData, wip.title || 'つづき');
     } else {
-      alert("No WIP data found!");
+      showToast('つづきのデータがありませんでした！');
     }
   } catch (err) {
     console.error(err);
-    alert("Error resuming: " + err.message);
+    showToast('復元エラーが発生しました');
   }
 }
 
@@ -49,14 +49,27 @@ toastEl.className = 'toast hidden';
 document.body.appendChild(toastEl);
 
 // ============ 画面インスタンスを生成 ============
-const homeScreen   = createHomeScreen({ 
-  onStart: () => navigate('spell'), 
+const homeScreen = createHomeScreen({
+  onStart: () => navigate('spell'),
   onGallery: () => navigate('gallery'),
   onResume: handleResumeWip
 });
-const spellScreen  = createSpellScreen({ onBack: () => navigate('home'), onGenerate: handleGenerate });
-const puzzleScreen = createPuzzleScreen({ onBack: () => navigate('home'), onComplete: () => navigate('gallery') });
-const galleryScreen = createGalleryScreen({ onBack: () => navigate('home'), onNewArt: () => navigate('spell'), onReplay: handleReplay });
+
+const spellScreen = createSpellScreen({
+  onBack: () => navigate('home'),
+  onGenerate: handleGenerate
+});
+
+const puzzleScreen = createPuzzleScreen({
+  onBack: () => navigate('home'),
+  onComplete: () => navigate('gallery')
+});
+
+const galleryScreen = createGalleryScreen({
+  onBack: () => navigate('home'),
+  onNewArt: () => navigate('spell'),
+  onReplay: handleReplay
+});
 
 app.appendChild(homeScreen);
 app.appendChild(spellScreen);
@@ -75,8 +88,20 @@ let currentScreen = 'home';
 
 function navigate(name) {
   Object.values(screens).forEach(s => s.classList.remove('active'));
-  screens[name].classList.add('active');
+  if (screens[name]) {
+    screens[name].classList.add('active');
+  }
   currentScreen = name;
+
+  // 要件: 子供が誤タップしないよう、パズル画面には広告を配置しない
+  const adEl = document.getElementById('global-ad-container');
+  if (adEl) {
+    if (name === 'puzzle') {
+      adEl.style.display = 'none';
+    } else {
+      adEl.style.display = 'block';
+    }
+  }
 
   if (name === 'gallery') {
     galleryScreen._refresh();
@@ -92,7 +117,7 @@ navigate('home');
 
 // ============ 画像生成フロー ============
 async function handleGenerate(text) {
-  showLoading(`「${text}」のえをつくってるよ！\nまほうをかけてるかんじ✨`);
+  showLoading(`「${text}」のえを つくっているよ！\nまほうをかけているよ…✨`);
 
   try {
     // 1. テキスト → プロンプト変換（Gemini / モック）
@@ -100,24 +125,24 @@ async function handleGenerate(text) {
 
     if (!safe) {
       hideLoading();
-      showToast(message || 'そのことばはつかえないよ！');
+      showToast(message || 'そのことばは つかえないよ！');
       return;
     }
 
-    updateLoadingMsg('えをかいてるよ✏️\nもうすこしまってね！');
+    updateLoadingMsg('えをかいてるよ✏️\nもうすこし まってね！');
 
-    // 2. 画像生成
+    // 2. 画像生成（Imagen / プリセット）
     const imageUrl = await generateImage(prompt);
 
-    updateLoadingMsg('パズルをつくってるよ🧩');
+    updateLoadingMsg('パズルをつくっているよ🧩');
 
     // 3. ピクセル化処理
     let puzzleData;
     try {
-      puzzleData = await pixelateImage(imageUrl, 12);
+      puzzleData = await pixelateImage(imageUrl, 8, 16);
     } catch (e) {
-      console.warn('pixelateImage failed, using mock:', e);
-      puzzleData = generateMockPuzzle();
+      console.warn('pixelateImage fallback to preset:', e);
+      puzzleData = generateMockPuzzle(text);
     }
 
     hideLoading();
@@ -130,17 +155,17 @@ async function handleGenerate(text) {
     console.error('Generation error:', err);
     hideLoading();
 
-    // エラー時もモックパズルで遊べるようにする
-    const puzzleData = generateMockPuzzle();
+    // エラー時もプリセットパズルで遊べるようにする
+    const puzzleData = generateMockPuzzle(text);
     navigate('puzzle');
     puzzleScreen._initPuzzle(puzzleData, text);
-    showToast('AIがつかれてるみたい😅 かんたんなえで あそぼう！');
+    showToast('AIがおやすみ中💤\nおためしパズルで あそぼう！');
   }
 }
 
 // ============ ギャラリーからリプレイ ============
 function handleReplay(item) {
-  // solved状態をリセットして再挑戦できるようにする
+  // solved状態をリセットして最初から再挑戦
   const freshGrid = item.grid.map(row =>
     row.map(cell => ({ ...cell, solved: false }))
   );
@@ -153,6 +178,7 @@ function handleReplay(item) {
   puzzleScreen._initPuzzle(puzzleData, item.title);
 }
 
+// ============ UI ヘルパー ============
 function showLoading(msg) {
   loadingEl.querySelector('#loading-msg').innerHTML = msg.replace(/\n/g, '<br>');
   loadingEl.classList.remove('hidden');

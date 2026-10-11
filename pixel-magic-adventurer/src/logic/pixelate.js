@@ -3,30 +3,38 @@
  * Canvasを使った画像のモザイク化・減色処理（k-means法）
  */
 
-const GRID_SIZE = 16;
+import { getPresetPuzzle } from './presets.js';
+
+const DEFAULT_GRID_SIZE = 16;
 
 /**
  * 画像URLからパズルデータを生成する
  * @param {string} imageUrl
- * @param {number} numColors — 使用色数 (8〜16)
- * @returns {{ palette: string[], grid: Array<Array<{colorIndex:number, solved:boolean}>> }}
+ * @param {number} numColors — 使用色数 (6〜12色)
+ * @param {number} gridSize — グリッドの分割数 (16)
+ * @returns {Promise<{ palette: string[], grid: Array<Array<{colorIndex:number, solved:boolean}>>, gridSize: number }>}
  */
-export async function pixelateImage(imageUrl, numColors = 12) {
+export async function pixelateImage(imageUrl, numColors = 8, gridSize = DEFAULT_GRID_SIZE) {
   const img = await loadImage(imageUrl);
   const canvas = document.createElement('canvas');
-  canvas.width = GRID_SIZE;
-  canvas.height = GRID_SIZE;
+  canvas.width = gridSize;
+  canvas.height = gridSize;
   const ctx = canvas.getContext('2d');
 
-  // 32×32にリサイズして描画
-  ctx.drawImage(img, 0, 0, GRID_SIZE, GRID_SIZE);
-  const imageData = ctx.getImageData(0, 0, GRID_SIZE, GRID_SIZE);
-  const pixels = imageData.data; // Uint8ClampedArray [r,g,b,a, r,g,b,a, ...]
+  // グリッドサイズにリサイズして描画
+  ctx.drawImage(img, 0, 0, gridSize, gridSize);
+  const imageData = ctx.getImageData(0, 0, gridSize, gridSize);
+  const pixels = imageData.data; // Uint8ClampedArray [r,g,b,a, ...]
 
   // RGBピクセル配列を抽出
   const rgbPixels = [];
   for (let i = 0; i < pixels.length; i += 4) {
-    rgbPixels.push([pixels[i], pixels[i + 1], pixels[i + 2]]);
+    // アルファ値が低い場合は背景色（ダークネイビー #1A1A2E）とみなす
+    if (pixels[i + 3] < 50) {
+      rgbPixels.push([26, 26, 46]);
+    } else {
+      rgbPixels.push([pixels[i], pixels[i + 1], pixels[i + 2]]);
+    }
   }
 
   // k-means減色
@@ -34,10 +42,10 @@ export async function pixelateImage(imageUrl, numColors = 12) {
 
   // 各ピクセルを最近傍カラーのインデックスに変換
   const grid = [];
-  for (let y = 0; y < GRID_SIZE; y++) {
+  for (let y = 0; y < gridSize; y++) {
     const row = [];
-    for (let x = 0; x < GRID_SIZE; x++) {
-      const pixel = rgbPixels[y * GRID_SIZE + x];
+    for (let x = 0; x < gridSize; x++) {
+      const pixel = rgbPixels[y * gridSize + x];
       const colorIndex = nearestColor(pixel, palette);
       row.push({ colorIndex, solved: false });
     }
@@ -47,7 +55,7 @@ export async function pixelateImage(imageUrl, numColors = 12) {
   // hex文字列に変換
   const hexPalette = palette.map(([r, g, b]) => rgbToHex(r, g, b));
 
-  return { palette: hexPalette, grid, gridSize: GRID_SIZE };
+  return { palette: hexPalette, grid, gridSize };
 }
 
 /**
@@ -60,7 +68,7 @@ function loadImage(url) {
       img.crossOrigin = 'anonymous';
     }
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = (e) => reject(new Error('Failed to load image: ' + url));
     img.src = url;
   });
 }
@@ -69,17 +77,19 @@ function loadImage(url) {
  * k-means クラスタリングによる減色
  */
 function kMeans(pixels, k, maxIter = 20) {
-  // 初期セントロイド: ランダムに選ぶ
+  if (pixels.length === 0) return [[0, 0, 0]];
+  const actualK = Math.min(k, pixels.length);
+
+  // 初期セントロイド: 均等サンプリング
   let centroids = [];
-  const step = Math.floor(pixels.length / k);
-  for (let i = 0; i < k; i++) {
+  const step = Math.floor(pixels.length / actualK);
+  for (let i = 0; i < actualK; i++) {
     centroids.push([...pixels[i * step]]);
   }
 
   let assignments = new Array(pixels.length).fill(0);
 
   for (let iter = 0; iter < maxIter; iter++) {
-    // 各ピクセルを最近傍セントロイドに割り当て
     let changed = false;
     for (let i = 0; i < pixels.length; i++) {
       const nearest = nearestColor(pixels[i], centroids);
@@ -91,8 +101,9 @@ function kMeans(pixels, k, maxIter = 20) {
     if (!changed) break;
 
     // セントロイドを更新
-    const sums = Array.from({ length: k }, () => [0, 0, 0]);
-    const counts = new Array(k).fill(0);
+    const sums = Array.from({ length: actualK }, () => [0, 0, 0]);
+    const counts = new Array(actualK).fill(0);
+
     for (let i = 0; i < pixels.length; i++) {
       const ci = assignments[i];
       sums[ci][0] += pixels[i][0];
@@ -100,7 +111,8 @@ function kMeans(pixels, k, maxIter = 20) {
       sums[ci][2] += pixels[i][2];
       counts[ci]++;
     }
-    for (let c = 0; c < k; c++) {
+
+    for (let c = 0; c < actualK; c++) {
       if (counts[c] > 0) {
         centroids[c] = [
           Math.round(sums[c][0] / counts[c]),
@@ -110,6 +122,7 @@ function kMeans(pixels, k, maxIter = 20) {
       }
     }
   }
+
   return centroids;
 }
 
@@ -133,41 +146,12 @@ function nearestColor(pixel, palette) {
 }
 
 function rgbToHex(r, g, b) {
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
 /**
- * デモ用モック: ランダムなカラフルグリッドを生成
+ * モックパズルを生成（プリセットから取得）
  */
-export function generateMockPuzzle() {
-  const palette = [
-    '#FF6B35', '#FFD60A', '#06D6A0', '#4CC9F0',
-    '#7B2FBE', '#EF233C', '#3A86FF', '#FB5607',
-    '#8338EC', '#FFBE0B', '#06C67A', '#F72585',
-  ];
-
-  const grid = [];
-  for (let y = 0; y < GRID_SIZE; y++) {
-    const row = [];
-    for (let x = 0; x < GRID_SIZE; x++) {
-      // シンプルなパターン（実際はAPI生成画像を使用）
-      const regions = [
-        { cx: 4, cy: 4, r: 3, ci: 0 },
-        { cx: 12, cy: 4, r: 3, ci: 1 },
-        { cx: 8, cy: 10, r: 4, ci: 2 },
-        { cx: 4, cy: 12, r: 2, ci: 3 },
-        { cx: 12, cy: 12, r: 2, ci: 4 },
-      ];
-      let colorIndex = 5;
-      for (const { cx, cy, r, ci } of regions) {
-        if ((x - cx) ** 2 + (y - cy) ** 2 <= r ** 2) {
-          colorIndex = ci;
-          break;
-        }
-      }
-      row.push({ colorIndex, solved: false });
-    }
-    grid.push(row);
-  }
-  return { palette, grid, gridSize: GRID_SIZE };
+export function generateMockPuzzle(query = 'ねこ') {
+  return getPresetPuzzle(query);
 }

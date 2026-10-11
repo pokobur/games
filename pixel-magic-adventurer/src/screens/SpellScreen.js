@@ -1,8 +1,9 @@
 /**
- * SpellScreen.js — まほうのじゅもん画面（音声入力）
+ * SpellScreen.js — まほうのじゅもん画面（音声入力 + クイック選択）
  */
 import { VoiceInput } from '../logic/voiceInput.js';
 import { soundManager } from '../components/SoundManager.js';
+import { PRESET_SPELLS } from '../logic/presets.js';
 import mascotUrl from '../assets/mascot.png';
 
 export function createSpellScreen({ onBack, onGenerate }) {
@@ -11,69 +12,115 @@ export function createSpellScreen({ onBack, onGenerate }) {
   screen.className = 'screen';
   screen.innerHTML = `
     <div class="screen-header">
-      <button class="back-btn" id="spell-back">◀</button>
+      <button class="back-btn" id="spell-back" aria-label="もどる">◀</button>
       <h1>✨ まほうのじゅもん ✨</h1>
+      <button class="icon-btn" id="spell-sound-btn" aria-label="音の切り替え">
+        ${soundManager.isMuted ? '🔇' : '🔊'}
+      </button>
     </div>
 
     <div class="spell-body">
       <div class="spell-mascot-row">
         <img src="${mascotUrl}" class="spell-mascot-img" alt="マスコット" />
         <div class="spell-bubble" id="spell-bubble">
-          どんなえをつくりたい？<br>マイクをおしてしゃべってね！
+          どんなえをつくりたい？<br>マイクをおして おしゃべりしてね！
         </div>
       </div>
 
       <!-- 音声入力エリア -->
       <div class="spell-voice-area">
-        <button class="mic-btn" id="spell-mic" aria-label="録音開始">
+        <button class="mic-btn" id="spell-mic" aria-label="録音ボタン">
           <span class="mic-icon">🎤</span>
-          <span class="mic-label" id="spell-mic-label">おす！</span>
+          <span class="mic-label" id="spell-mic-label">マイクをおす</span>
         </button>
-        <div class="mic-rings" id="spell-mic-rings">
-          <div class="mic-ring"></div>
-          <div class="mic-ring"></div>
-          <div class="mic-ring"></div>
+        <div class="mic-indicator-solid" id="spell-mic-indicator">
+          🔴 おはなし中...
         </div>
       </div>
 
       <!-- 認識テキスト表示 -->
       <div class="spell-text-display" id="spell-text">
-        ここにことばがでるよ
-      </div>
-
-      <!-- テキスト入力フォールバック -->
-      <div class="spell-fallback" id="spell-fallback">
-        <div class="spell-fallback-label">キーボードでもかけるよ ⬇</div>
-        <input type="text" class="spell-input" id="spell-input" placeholder="例：ドラゴン、ねこ、にじ..." maxlength="40" />
+        ここにじゅもんがでるよ
       </div>
 
       <!-- 送信ボタン -->
       <button class="btn btn-primary spell-send-btn" id="spell-send" disabled>
         🪄 まほうをかける！
       </button>
+
+      <!-- おすすめのまほう（ワンタップですぐ遊べる！） -->
+      <div class="spell-preset-section">
+        <div class="spell-preset-label">🌟 タップしてえらんでもいいよ！</div>
+        <div class="spell-preset-grid">
+          ${PRESET_SPELLS.map(p => `
+            <button class="spell-preset-chip" data-spell="${p.name}">
+              ${p.emoji} ${p.name}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- テキスト入力フォールバック -->
+      <div class="spell-fallback">
+        <div class="spell-fallback-label">⌨️ キーボードでもかけるよ ⬇</div>
+        <input type="text" class="spell-input" id="spell-input" placeholder="例：ドラゴン、ねこ、にじ..." maxlength="30" />
+      </div>
     </div>
   `;
 
-  const backBtn   = screen.querySelector('#spell-back');
-  const micBtn    = screen.querySelector('#spell-mic');
-  const micLabel  = screen.querySelector('#spell-mic-label');
-  const micRings  = screen.querySelector('#spell-mic-rings');
-  const textDisp  = screen.querySelector('#spell-text');
-  const sendBtn   = screen.querySelector('#spell-send');
-  const input     = screen.querySelector('#spell-input');
-  const bubble    = screen.querySelector('#spell-bubble');
+  const backBtn      = screen.querySelector('#spell-back');
+  const micBtn       = screen.querySelector('#spell-mic');
+  const micLabel     = screen.querySelector('#spell-mic-label');
+  const micIndicator = screen.querySelector('#spell-mic-indicator');
+  const textDisp     = screen.querySelector('#spell-text');
+  const sendBtn      = screen.querySelector('#spell-send');
+  const input        = screen.querySelector('#spell-input');
+  const bubble       = screen.querySelector('#spell-bubble');
+  const soundBtn     = screen.querySelector('#spell-sound-btn');
+
+  // 音量ボタン
+  soundBtn.addEventListener('click', () => {
+    const muted = soundManager.toggleMute();
+    soundBtn.textContent = muted ? '🔇' : '🔊';
+  });
+  soundManager.onMuteChange((muted) => {
+    soundBtn.textContent = muted ? '🔇' : '🔊';
+  });
 
   let currentText = '';
   let isRecording = false;
 
-  // Voice input setup
+  function setSpellText(text) {
+    currentText = text.trim();
+    input.value = currentText;
+    if (currentText) {
+      textDisp.textContent = currentText;
+      textDisp.classList.add('has-text');
+      sendBtn.disabled = false;
+      bubble.innerHTML = `「${currentText}」だね！<br>まほうをかけてみよう！✨`;
+    } else {
+      textDisp.textContent = 'ここにじゅもんがでるよ';
+      textDisp.classList.remove('has-text');
+      sendBtn.disabled = true;
+    }
+  }
+
+  // おすすめプリセットのクリック
+  screen.querySelectorAll('.spell-preset-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      soundManager.playPop(3);
+      setSpellText(btn.dataset.spell);
+    });
+  });
+
+  // 音声認識
   const voice = new VoiceInput({
     onStart() {
       isRecording = true;
       micBtn.classList.add('recording');
-      micRings.classList.add('active');
-      micLabel.textContent = 'はなしてね！';
-      bubble.innerHTML = 'きいてるよ〜！<br>はっきりはなしてね！';
+      micIndicator.classList.add('active');
+      micLabel.textContent = 'きいてるよ！';
+      bubble.innerHTML = 'きいてるよ〜！<br>はっきり おはなししてね！👂';
       soundManager.playRecord();
     },
     onResult(transcript, isFinal) {
@@ -87,29 +134,31 @@ export function createSpellScreen({ onBack, onGenerate }) {
     onEnd() {
       isRecording = false;
       micBtn.classList.remove('recording');
-      micRings.classList.remove('active');
-      micLabel.textContent = 'おす！';
+      micIndicator.classList.remove('active');
+      micLabel.textContent = 'マイクをおす';
       if (!currentText.trim()) {
-        bubble.innerHTML = 'もうちょっとはっきりはなしてみてね！';
+        bubble.innerHTML = 'もういちど マイクをおして<br>はなしてみてね！';
       } else {
-        bubble.innerHTML = `「${currentText}」だね！<br>まほうをかけてみよう！`;
+        bubble.innerHTML = `「${currentText}」だね！<br>まほうをかけてみよう！✨`;
+        sendBtn.disabled = false;
       }
     },
     onError(err) {
       isRecording = false;
       micBtn.classList.remove('recording');
-      micRings.classList.remove('active');
-      micLabel.textContent = 'おす！';
+      micIndicator.classList.remove('active');
+      micLabel.textContent = 'マイクをおす';
       soundManager.playError();
       if (err === 'not-allowed') {
-        bubble.innerHTML = 'マイクがつかえないよ😢<br>したのはこに かいてもいいよ！';
+        bubble.innerHTML = 'マイクがつかえないよ😢<br>下のおすすめボタンをおしてね！';
       }
     },
   });
 
-  // Hide mic button if not supported
   if (!voice.isSupported) {
     micBtn.style.display = 'none';
+    micIndicator.style.display = 'none';
+    bubble.innerHTML = 'すきなものをえらぶか、<br>したに書いてみてね！';
   }
 
   micBtn.addEventListener('click', () => {
@@ -117,7 +166,7 @@ export function createSpellScreen({ onBack, onGenerate }) {
       voice.stop();
     } else {
       currentText = '';
-      textDisp.textContent = 'きいてるよ〜';
+      textDisp.textContent = 'きいてるよ…👂';
       textDisp.classList.remove('has-text');
       sendBtn.disabled = true;
       voice.start();
@@ -125,18 +174,12 @@ export function createSpellScreen({ onBack, onGenerate }) {
   });
 
   input.addEventListener('input', () => {
-    currentText = input.value;
-    if (currentText.trim()) {
-      sendBtn.disabled = false;
-      textDisp.textContent = currentText;
-      textDisp.classList.add('has-text');
-    } else {
-      sendBtn.disabled = true;
-    }
+    setSpellText(input.value);
   });
 
   sendBtn.addEventListener('click', () => {
     if (currentText.trim()) {
+      soundManager.playPop(1);
       onGenerate(currentText.trim());
     }
   });
@@ -146,10 +189,10 @@ export function createSpellScreen({ onBack, onGenerate }) {
   screen._refresh = () => {
     currentText = '';
     input.value = '';
-    textDisp.textContent = 'ここにことばがでるよ';
+    textDisp.textContent = 'ここにじゅもんがでるよ';
     textDisp.classList.remove('has-text');
     sendBtn.disabled = true;
-    bubble.innerHTML = 'どんなえをつくりたい？<br>マイクをおしてしゃべってね！';
+    bubble.innerHTML = 'どんなえをつくりたい？<br>マイクをおして おしゃべりしてね！';
     if (isRecording) {
       voice.stop();
     }
@@ -169,9 +212,12 @@ export const spellScreenCSS = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px;
-  gap: 16px;
+  padding: 12px 16px 20px;
+  gap: 12px;
   overflow-y: auto;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .spell-mascot-row {
@@ -179,15 +225,14 @@ export const spellScreenCSS = `
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 400px;
 }
 
 .spell-mascot-img {
-  width: 80px;
-  height: 80px;
+  width: 75px;
+  height: 75px;
   object-fit: contain;
   image-rendering: pixelated;
-  animation: float 3s ease-in-out infinite;
+  animation: float 2.5s ease-in-out infinite;
   flex-shrink: 0;
 }
 
@@ -197,74 +242,65 @@ export const spellScreenCSS = `
   color: #1A1A2E;
   font-size: 0.95rem;
   font-weight: 900;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-radius: 16px;
-  border: 3px solid #D94F1A;
-  line-height: 1.5;
+  border: 3px solid #0A0E17;
+  line-height: 1.4;
   position: relative;
+  box-shadow: 0 4px 0 #0A0E17;
 }
 
 .spell-bubble::before {
   content: '';
   position: absolute;
-  left: -14px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 7px solid transparent;
-  border-right-color: #D94F1A;
-}
-
-.spell-bubble::after {
-  content: '';
-  position: absolute;
-  left: -10px;
+  left: -12px;
   top: 50%;
   transform: translateY(-50%);
   border: 6px solid transparent;
-  border-right-color: #FFD60A;
+  border-right-color: #0A0E17;
 }
 
-/* Mic Button */
+/* Mic Area */
 .spell-voice-area {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 160px;
-  height: 160px;
+  gap: 8px;
+  margin: 4px 0;
 }
 
 .mic-btn {
   position: relative;
   z-index: 2;
-  width: 120px;
-  height: 120px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   background: #3A86FF;
-  border: none;
-  box-shadow: 0 8px 0 #1A3D8F;
+  border: 4px solid #0A0E17;
+  box-shadow: 0 8px 0 #0A0E17;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  transition: transform 0.15s ease;
+  gap: 2px;
+  transition: transform 0.12s ease;
 }
 
 .mic-btn:active {
-  transform: scale(0.94) translateY(4px);
-  box-shadow: 0 4px 0 #1A3D8F;
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 #0A0E17;
 }
 
 .mic-btn.recording {
   background: #EF233C;
-  box-shadow: 0 8px 0 #8B0018;
-  animation: fanfareJump 0.5s ease infinite;
+  animation: fanfareJump 0.4s ease infinite;
 }
 
 .mic-icon {
-  font-size: 2.4rem;
+  font-size: 2.2rem;
   line-height: 1;
 }
 
@@ -274,88 +310,130 @@ export const spellScreenCSS = `
   color: #FFFFFF;
 }
 
-/* Rings */
-.mic-rings {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.mic-ring {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  border: 4px solid #EF233C;
-  border-radius: 50%;
+.mic-indicator-solid {
   display: none;
+  background: #EF233C;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 4px 14px;
+  border-radius: 12px;
+  border: 2px solid #0A0E17;
 }
 
-.mic-rings.active .mic-ring {
+.mic-indicator-solid.active {
   display: block;
 }
 
-.mic-rings.active .mic-ring:nth-child(1) {
-  animation: pulseRing 1.2s ease-out infinite;
-}
-.mic-rings.active .mic-ring:nth-child(2) {
-  animation: pulseRing 1.2s ease-out 0.4s infinite;
-}
-.mic-rings.active .mic-ring:nth-child(3) {
-  animation: pulseRing 1.2s ease-out 0.8s infinite;
-}
-
-/* Text display */
+/* Text Display */
 .spell-text-display {
   background: #16213E;
   border: 3px solid #0F3460;
   border-radius: 16px;
-  padding: 14px 20px;
-  font-size: 1.3rem;
+  padding: 12px 18px;
+  font-size: 1.25rem;
   font-weight: 900;
   color: #A0AABA;
   text-align: center;
-  min-width: 260px;
-  max-width: 380px;
   width: 100%;
-  min-height: 60px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 0 #0A0E17;
 }
 
 .spell-text-display.has-text {
   color: #FFD60A;
   border-color: #FFD60A;
-  font-size: 1.5rem;
+  font-size: 1.45rem;
+  background: #0F172A;
 }
 
-/* Fallback input */
-.spell-fallback {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+.spell-send-btn {
   width: 100%;
-  max-width: 380px;
+  max-width: 340px;
+  font-size: 1.35rem;
+  padding: 16px;
+  background: #06D6A0;
+  color: #1A1A2E;
+  border: 3px solid #0A0E17;
+}
+
+.spell-send-btn:disabled {
+  background: #1E2A45;
+  color: #A0AABA;
+  box-shadow: 0 4px 0 #0A0E17;
+  cursor: not-allowed;
+}
+
+/* Preset Chips */
+.spell-preset-section {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.spell-preset-label {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #FFD60A;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.spell-preset-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spell-preset-chip {
+  background: #16213E;
+  color: #FFFFFF;
+  border: 2px solid #3A86FF;
+  border-radius: var(--radius-full);
+  padding: 7px 14px;
+  font-size: 0.95rem;
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #0A0E17;
+  transition: transform 0.1s ease;
+}
+
+.spell-preset-chip:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #0A0E17;
+}
+
+.spell-preset-chip:hover {
+  background: #3A86FF;
+  color: #FFFFFF;
+}
+
+/* Fallback Keyboard */
+.spell-fallback {
+  width: 100%;
+  margin-top: 4px;
 }
 
 .spell-fallback-label {
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 900;
   color: #A0AABA;
+  margin-bottom: 4px;
+  text-align: center;
 }
 
 .spell-input {
   width: 100%;
-  padding: 14px 16px;
-  font-size: 1.1rem;
-  font-family: var(--font-main);
-  font-weight: 700;
+  padding: 10px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 900;
   border: 3px solid #0F3460;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #16213E;
   color: #FFFFFF;
   outline: none;
@@ -363,27 +441,5 @@ export const spellScreenCSS = `
 
 .spell-input:focus {
   border-color: #FFD60A;
-}
-
-.spell-send-btn {
-  width: 100%;
-  max-width: 320px;
-  font-size: 1.3rem;
-  padding: 18px;
-  background: #06D6A0;
-  color: #1A1A2E;
-  box-shadow: 0 8px 0 #04825F;
-}
-
-.spell-send-btn:disabled {
-  background: #1E2A45;
-  color: #A0AABA;
-  box-shadow: 0 4px 0 #111827;
-  cursor: not-allowed;
-}
-
-.spell-send-btn:disabled:active {
-  transform: none;
-  box-shadow: 0 4px 0 #111827;
 }
 `;

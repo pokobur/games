@@ -2,6 +2,7 @@
  * GalleryScreen.js — ギャラリー（光るコレクション）画面
  */
 import { loadGallery, deleteFromGallery } from '../logic/storage.js';
+import { soundManager } from '../components/SoundManager.js';
 
 export function createGalleryScreen({ onBack, onNewArt, onReplay }) {
   const screen = document.createElement('div');
@@ -9,63 +10,79 @@ export function createGalleryScreen({ onBack, onNewArt, onReplay }) {
   screen.className = 'screen';
   screen.innerHTML = `
     <div class="screen-header">
-      <button class="back-btn" id="gallery-back">◀</button>
+      <button class="back-btn" id="gallery-back" aria-label="もどる">◀</button>
       <h1>🌟 ひかるコレクション</h1>
+      <button class="icon-btn" id="gallery-sound-btn" aria-label="音の切り替え">
+        ${soundManager.isMuted ? '🔇' : '🔊'}
+      </button>
     </div>
 
-    <!-- 広告スロット（上） -->
+    <!-- 広告スロット（上）Google AdSense 常設 -->
     <div class="ad-slot ad-slot-top" id="ad-top">
-      <span class="ad-label">広告</span>
-      <!-- Google AdSense コードをここに挿入 -->
+      <span class="ad-label">こうこく</span>
+      <div class="ad-placeholder">
+        <span>🎮 たのしいゲームがいっぱい！</span>
+      </div>
     </div>
 
     <div class="gallery-body" id="gallery-body">
       <!-- ギャラリーグリッド or Empty State -->
     </div>
 
-    <!-- アフィリエイトバナー -->
+    <!-- アフィリエイトバナー（実製品Divoom連携） -->
     <div class="affiliate-banner" id="affiliate-banner">
       <div class="affiliate-left">
-        <div class="affiliate-title">🎮 作った絵を飾ろう！</div>
-        <div class="affiliate-desc">Divoomでピクセルアートを表示！</div>
+        <div class="affiliate-title">📺 つくった絵をおへやにかざろう！</div>
+        <div class="affiliate-desc">Divoomのピクセルクロックで光らせよう！</div>
       </div>
       <a href="https://www.amazon.co.jp/s?k=Divoom+pixel+clock" target="_blank" rel="noopener" class="btn btn-accent affiliate-btn">
         📦 みてみる
       </a>
     </div>
 
-    <!-- 広告スロット（下） -->
+    <!-- 広告スロット（下）Google AdSense 常設 -->
     <div class="ad-slot ad-slot-bottom" id="ad-bottom">
-      <span class="ad-label">広告</span>
-      <!-- Google AdSense コードをここに挿入 -->
+      <span class="ad-label">こうこく</span>
+      <div class="ad-placeholder">
+        <span>🌟 ピクセルマジックアドベンチャー</span>
+      </div>
     </div>
 
-    <!-- 親向けパネル -->
+    <!-- 親向けパネル（知育オウンドメディア送客） -->
     <div class="parent-panel" id="parent-panel">
-      <div class="parent-panel-title">📚 保護者の方へ</div>
+      <div class="parent-panel-title">📚 ほごしゃのかたへ</div>
       <a href="https://plyo.blog" target="_blank" rel="noopener" class="parent-link">
-        ✏️ 子供の創造性を伸ばす声かけ術（記事を読む）
+        ✏️ 子供の創造性を伸ばす声かけ術（plyo.blogで読む）
       </a>
     </div>
 
-    <!-- モーダル（拡大・あそびなおす・ダウンロード） -->
-    <div class="gallery-modal hidden" id="gallery-modal">
-      <div class="gallery-modal-content">
-        <button class="gallery-modal-close" id="gallery-modal-close">✕</button>
-        <img src="" id="gallery-modal-img" class="gallery-modal-img" />
+    <!-- モーダル（拡大・あそびなおす・ダウンロード）ソリッド完全不透明 -->
+    <div class="modal-backdrop hidden" id="gallery-modal">
+      <div class="modal-card">
+        <button class="modal-close-btn" id="gallery-modal-close">✕</button>
+        <img src="" id="gallery-modal-img" class="gallery-modal-img" alt="作品の拡大" />
         <h2 id="gallery-modal-title" class="gallery-modal-title"></h2>
-        
-        <div class="gallery-modal-actions">
-          <button class="btn btn-success gallery-modal-download" id="gallery-modal-download">
-            📥 しゃしんをほぞんする
+
+        <div class="modal-actions">
+          <button class="btn btn-success" id="gallery-modal-download">
+            📥 画像をほぞんする
           </button>
-          <button class="btn btn-primary gallery-modal-replay" id="gallery-modal-replay">
-            ▶ もう１かい・あそびなおす
+          <button class="btn btn-primary" id="gallery-modal-replay">
+            ▶ もう１回あそびなおす！
           </button>
         </div>
       </div>
     </div>
   `;
+
+  const soundBtn = screen.querySelector('#gallery-sound-btn');
+  soundBtn.addEventListener('click', () => {
+    const muted = soundManager.toggleMute();
+    soundBtn.textContent = muted ? '🔇' : '🔊';
+  });
+  soundManager.onMuteChange((muted) => {
+    soundBtn.textContent = muted ? '🔇' : '🔊';
+  });
 
   screen.querySelector('#gallery-back').addEventListener('click', onBack);
   screen.querySelector('#gallery-modal-close').addEventListener('click', () => {
@@ -80,7 +97,7 @@ export function createGalleryScreen({ onBack, onNewArt, onReplay }) {
       body.innerHTML = `
         <div class="gallery-empty">
           <div class="gallery-empty-emoji">🎨</div>
-          <div class="gallery-empty-text">まだなにもないよ！<br>まほうをかけてえをつくろう！</div>
+          <div class="gallery-empty-text">まだ さくひんが ないよ！<br>まほうをかけて えをつくろう！</div>
           <button class="btn btn-primary" id="gallery-new">✨ はじめる</button>
         </div>
       `;
@@ -97,17 +114,19 @@ export function createGalleryScreen({ onBack, onNewArt, onReplay }) {
       card.innerHTML = `
         <div class="gallery-img-wrap">
           <img src="${item.dataUrl}" class="gallery-img" alt="${item.title}" />
+          <div class="gallery-card-badge">▶</div>
         </div>
         <div class="gallery-card-title">${item.title}</div>
         <button class="gallery-delete-btn" aria-label="削除">✕</button>
       `;
 
-      // モーダルを開いて拡大表示
+      // モーダルを開いて拡大・リプレイ・保存
       card.addEventListener('click', () => {
+        soundManager.playPop(2);
         const modal = screen.querySelector('#gallery-modal');
         modal.querySelector('#gallery-modal-img').src = item.dataUrl;
         modal.querySelector('#gallery-modal-title').textContent = item.title;
-        
+
         const replayBtn = modal.querySelector('#gallery-modal-replay');
         const newReplayBtn = replayBtn.cloneNode(true);
         replayBtn.replaceWith(newReplayBtn);
@@ -131,11 +150,11 @@ export function createGalleryScreen({ onBack, onNewArt, onReplay }) {
         modal.classList.remove('hidden');
       });
 
-      // 削除ボタン (e.stopPropagationでモーダルが開くのを防ぐ)
+      // 削除ボタン
       card.querySelector('.gallery-delete-btn').addEventListener('click', (e) => {
         e.stopPropagation();
-        if (confirm('このえをけしますか？')) {
-          deleteFromGallery(item.id); // dataset不要で型問題を回避
+        if (confirm('このえを けしますか？')) {
+          deleteFromGallery(item.id);
           refresh();
         }
       });
@@ -152,131 +171,170 @@ export const galleryScreenCSS = `
 /* ====== GalleryScreen ====== */
 #screen-gallery {
   background: #1A1A2E;
+  overflow-y: auto;
 }
 
-/* Ad slots */
+/* Ad slots (ソリッド色) */
 .ad-slot {
-  background: #16213E;
-  border: 2px solid #0F3460;
+  background: #0E1424;
+  border-top: 3px solid #0A0E17;
+  border-bottom: 3px solid #0A0E17;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 60px;
+  min-height: 54px;
   flex-shrink: 0;
   position: relative;
+  padding: 6px;
 }
 
 .ad-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
+  font-weight: 900;
   color: #A0AABA;
   position: absolute;
-  top: 4px;
+  top: 3px;
   right: 8px;
+}
+
+.ad-placeholder {
+  color: #FFD60A;
+  font-size: 0.85rem;
+  font-weight: 900;
 }
 
 /* Gallery body */
 .gallery-body {
   flex: 1;
-  overflow-y: auto;
-  padding: 12px;
+  padding: 14px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
 }
 
-/* Gallery card */
+/* Gallery card (Divoomピクセルモニターのようなソリッド発光アニメーション) */
 .gallery-card {
   position: relative;
   background: #16213E;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
-  border: 3px solid #FFD60A;
-  animation: glowPulse 3s ease-in-out infinite;
-  box-shadow: 0 0 12px 4px #FFD60A;
+  border: 4px solid #FFD60A;
+  box-shadow: 0 6px 0 #0A0E17;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.12s ease;
+  animation: pixelBorderGlow 2.5s infinite;
 }
 
-.gallery-card:hover {
-  transform: scale(1.04);
+@keyframes pixelBorderGlow {
+  0%, 100% { border-color: #FFD60A; }
+  33%       { border-color: #FF6B35; }
+  66%       { border-color: #06D6A0; }
 }
 
-/* Stagger animation delays */
-.gallery-card:nth-child(2n)   { animation-delay: 0.5s; }
-.gallery-card:nth-child(3n)   { animation-delay: 1s; }
-.gallery-card:nth-child(4n)   { animation-delay: 1.5s; }
-.gallery-card:nth-child(5n)   { animation-delay: 2s; }
-
-.gallery-img {
-  width: 100%;
-  aspect-ratio: 1;
-  display: block;
-  image-rendering: pixelated;
+.gallery-card:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 #0A0E17;
 }
+
+.gallery-card:nth-child(2n) { animation-delay: 0.4s; }
+.gallery-card:nth-child(3n) { animation-delay: 0.8s; }
 
 .gallery-img-wrap {
   position: relative;
-  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #0A0E17;
+}
+
+.gallery-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  object-fit: cover;
+}
+
+.gallery-card-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: #3A86FF;
+  color: #FFFFFF;
+  border: 2px solid #0A0E17;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 #0A0E17;
 }
 
 .gallery-card-title {
   background: #0F3460;
   color: #FFD60A;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 900;
-  padding: 6px 8px;
+  padding: 8px 10px;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  border-top: 3px solid #0A0E17;
 }
 
 .gallery-delete-btn {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 6px;
+  right: 6px;
   background: #EF233C;
   color: #FFFFFF;
-  border: none;
+  border: 2px solid #0A0E17;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  font-size: 0.65rem;
+  width: 26px;
+  height: 26px;
+  font-size: 0.75rem;
   font-weight: 900;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 0 #0A0E17;
+  z-index: 5;
 }
 
-/* Empty state */
+/* Empty State */
 .gallery-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  padding: 40px 20px;
+  padding: 40px 16px;
   text-align: center;
 }
 
 .gallery-empty-emoji {
   font-size: 4rem;
-  animation: float 3s ease-in-out infinite;
+  animation: float 2.5s ease-in-out infinite;
 }
 
 .gallery-empty-text {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: #A0AABA;
   line-height: 1.6;
 }
 
-/* Affiliate banner */
+/* Affiliate Banner */
 .affiliate-banner {
   display: flex;
   align-items: center;
@@ -284,9 +342,12 @@ export const galleryScreenCSS = `
   gap: 12px;
   padding: 12px 16px;
   background: #16213E;
-  border-top: 3px solid #7B2FBE;
-  border-bottom: 3px solid #7B2FBE;
+  border-top: 4px solid #7B2FBE;
+  border-bottom: 4px solid #7B2FBE;
   flex-shrink: 0;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .affiliate-left {
@@ -301,32 +362,32 @@ export const galleryScreenCSS = `
 
 .affiliate-desc {
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 900;
   color: #A0AABA;
 }
 
 .affiliate-btn {
   flex-shrink: 0;
-  font-size: 0.9rem;
-  padding: 10px 16px;
-  background: #FFD60A;
-  color: #1A1A2E;
+  font-size: 0.95rem;
+  padding: 10px 18px;
   text-decoration: none;
-  box-shadow: 0 4px 0 #8B7000;
 }
 
-/* Parent panel */
+/* Parent Panel */
 .parent-panel {
-  padding: 12px 16px;
-  background: #16213E;
-  border-top: 2px solid #0F3460;
+  padding: 14px 16px;
+  background: #0E1424;
+  border-top: 3px solid #0A0E17;
   flex-shrink: 0;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .parent-panel-title {
   font-size: 0.85rem;
   font-weight: 900;
-  color: #A0AABA;
+  color: #FFD60A;
   margin-bottom: 6px;
 }
 
@@ -334,97 +395,33 @@ export const galleryScreenCSS = `
   display: block;
   color: #4CC9F0;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 900;
   text-decoration: none;
-  padding: 8px 12px;
-  background: #0F3460;
-  border-radius: 10px;
-  border: 2px solid #4CC9F0;
+  padding: 10px 14px;
+  background: #16213E;
+  border-radius: 12px;
+  border: 3px solid #4CC9F0;
+  box-shadow: 0 4px 0 #0A0E17;
 }
 
 .parent-link:hover {
-  background: #1E4A80;
+  background: #0F3460;
 }
 
-/* Modal */
-.gallery-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 52, 96, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-.gallery-modal-content {
-  background: #16213E;
-  border: 4px solid #FFD60A;
-  border-radius: 20px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  width: 100%;
-  max-width: 360px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-  animation: bounceIn 0.3s ease;
-}
-.gallery-modal-close {
-  position: absolute;
-  top: -15px;
-  right: -15px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #EF233C;
-  color: white;
-  border: 3px solid #16213E;
-  font-size: 1.4rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 0 #8B0018;
-}
-.gallery-modal-close:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #8B0018;
-}
 .gallery-modal-img {
-  width: 100%;
-  aspect-ratio: 1;
-  image-rendering: auto;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  width: 220px;
+  height: 220px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  border-radius: 16px;
+  border: 4px solid #0A0E17;
+  margin-bottom: 12px;
 }
+
 .gallery-modal-title {
   color: #FFD60A;
-  font-size: 1.6rem;
-  margin-bottom: 24px;
-  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-bottom: 16px;
 }
-.gallery-modal-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-}
-.gallery-modal-download,
-.gallery-modal-replay {
-  width: 100%;
-  padding: 16px;
-  font-size: 1.2rem;
-}
-.gallery-modal-replay {
-  background: #3A86FF;
-  box-shadow: 0 6px 0 #1A3D8F;
-}
-.gallery-modal-replay:active {
-  box-shadow: 0 2px 0 #1A3D8F;
-}
-
 `;

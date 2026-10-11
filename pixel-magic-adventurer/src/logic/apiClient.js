@@ -1,16 +1,18 @@
 /**
  * apiClient.js
  * Gemini API + 画像生成API クライアント
- * APIキーが未設定の場合はモックデータを返す
+ * APIキーが未設定の場合は高品質プリセット／モックデータを返す
  */
 
 import { loadApiKey } from './storage.js';
+import { getPresetPuzzle } from './presets.js';
 
 /**
  * 実行時に LocalStorage または 環境変数 から APIキー を取得する
  */
 function getApiKey() {
-  return loadApiKey() || '';
+  const envKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+  return loadApiKey() || envKey || '';
 }
 
 /**
@@ -26,12 +28,20 @@ export async function translateToPrompt(text) {
   }
 
   const systemPrompt = `あなたは子供向けアプリのAIアシスタントです。
-ユーザーの入力テキストを確認して以下のJSONを返してください：
-- safe: boolean（子供向けに適切かどうか）
-- prompt: string（英語の画像生成プロンプト。「a very simple 2D flat vector icon of a [subject], thick black outlines, bold solid colors, isolated on pure white background, no shading, no details, child friendly, kawaii」を必ずベースにしてください。ドット絵(16x16)に変換するため、写真や複雑な絵は絶対にNGです）
-- message: string（日本語でユーザーへのメッセージ）
+ユーザーの入力テキストを確認して、子供向けに安全かどうか判定し、画像生成プロンプトを作成してください。
+以下の形式の有効なJSONのみを出力してください（Markdownコードブロックは不要、余計な説明文は一切含めないでください）：
+{
+  "safe": trueまたはfalse,
+  "prompt": "英語のプロンプト",
+  "message": "日本語のメッセージ"
+}
 
-入力:「${text}」`;
+プロンプトのルール:
+- 「a very simple 2D flat vector icon of a [subject], thick black outlines, bold solid colors, isolated on pure white background, no shading, no details, child friendly, cute, minimalist」を必ず基本構成にしてください。
+- 16x16のドット絵に変換するため、写真や複雑な絵、グラデーションは絶対にNGです。
+- 危険な言葉や不適切な言葉が含まれる場合は safe: false にしてください。
+
+入力テキスト:「${text}」`;
 
   try {
     const res = await fetch(
@@ -43,17 +53,24 @@ export async function translateToPrompt(text) {
           contents: [{ parts: [{ text: systemPrompt }] }],
           generationConfig: {
             response_mime_type: 'application/json',
-            temperature: 0.7,
+            temperature: 0.4,
           },
         }),
       }
     );
-    if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
+
+    if (!res.ok) {
+      console.warn(`Gemini API returned ${res.status}, falling back to mock.`);
+      return mockTranslate(text);
+    }
+
     const data = await res.json();
-    const jsonText = data.candidates[0].content.parts[0].text;
-    return JSON.parse(jsonText);
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // JSON文字列の抽出（コードブロックのトリム対応）
+    const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanJson);
   } catch (err) {
-    console.error('Gemini API error:', err);
+    console.error('Gemini API error, using mock:', err);
     return mockTranslate(text);
   }
 }
@@ -61,7 +78,7 @@ export async function translateToPrompt(text) {
 /**
  * プロンプトから画像を生成する
  * @param {string} prompt - 英語プロンプト
- * @returns {Promise<string>} 画像URL
+ * @returns {Promise<string>} 画像URLまたはdataURL
  */
 export async function generateImage(prompt) {
   const apiKey = getApiKey();
@@ -77,7 +94,9 @@ export async function generateImage(prompt) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt: prompt + ', isolated on a pure white background, extremely simple flat shape, thick outlines, plain solid colors, no gradients, minimal details' }],
+          instances: [{
+            prompt: `${prompt}, extremely simple flat 2D icon, pure white background, bold outlines, solid bright colors, no gradients, minimal vector style`
+          }],
           parameters: {
             sampleCount: 1,
             aspectRatio: '1:1',
@@ -85,85 +104,65 @@ export async function generateImage(prompt) {
         }),
       }
     );
-    if (!res.ok) throw new Error(`Imagen API error: ${res.status}`);
+
+    if (!res.ok) {
+      console.warn(`Imagen API error ${res.status}, using mock`);
+      return generateMockImage(prompt);
+    }
+
     const data = await res.json();
-    const base64 = data.predictions[0].bytesBase64Encoded;
-    return `data:image/png;base64,${base64}`;
+    const base64 = data?.predictions?.[0]?.bytesBase64Encoded;
+    if (base64) {
+      return `data:image/png;base64,${base64}`;
+    }
+    return generateMockImage(prompt);
   } catch (err) {
-    console.error('Image API error:', err);
+    console.error('Image API error, using mock:', err);
     return generateMockImage(prompt);
   }
 }
 
 // ============ モック関数 ============
 
-const MOCK_SUBJECTS = {
-  'ドラゴン': 'dragon',   'ねこ': 'cat',      'いぬ': 'dog',
-  'りんご':  'apple',    'たいよう': 'sun',   'ほし': 'star',
-  'きょうりゅう': 'dinosaur', 'うさぎ': 'rabbit', 'くも': 'cloud',
-  'はな': 'flower',      'さかな': 'fish',    'ふね': 'boat',
-  'ロケット': 'rocket',   'ケーキ': 'cake',   'にじ': 'rainbow',
-};
+const NG_WORDS = ['死', '殺', '血', 'こわい', 'ばか', 'アホ', 'うんこ', 'うんち', '戦争', '銃', 'ナイフ'];
 
 function mockTranslate(text) {
-  // 危険ワードの簡易チェック
-  const ngWords = ['こわい', 'ちち', 'おかあさん', '死', '殺'];
-  for (const w of ngWords) {
+  // 簡易NGチェック
+  for (const w of NG_WORDS) {
     if (text.includes(w)) {
-      return { safe: false, prompt: '', message: 'そのことばはつかえないよ！ほかのことばをためしてね！' };
+      return {
+        safe: false,
+        prompt: '',
+        message: 'そのことばは まほうにつかえないよ！\nたのしいことばにしてみてね！'
+      };
     }
   }
-  let subject = '';
-  for (const [jp, en] of Object.entries(MOCK_SUBJECTS)) {
-    if (text.includes(jp)) { subject = en; break; }
-  }
-  if (!subject) subject = text || 'magical creature';
-  const prompt = `a very simple 2D flat vector icon of a cute ${subject}, thick black outlines, bold solid colors, isolated on pure white background, no shading, no details, child friendly, kawaii`;
-  return { safe: true, prompt, message: `「${text}」のえをつくるよ！まってね！` };
+
+  return {
+    safe: true,
+    prompt: text,
+    message: `「${text}」のまほうをかけるよ！\nちょっとまっててね！✨`
+  };
 }
 
-async function generateMockImage(prompt) {
-  // カラフルなプレースホルダー画像を生成（Canvas）
+/**
+ * モック画像を生成する。プリセットピクセルアートからCanvasに描画してDataURLを返す
+ */
+export async function generateMockImage(query) {
+  const preset = getPresetPuzzle(query);
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
+  canvas.width = 128;
+  canvas.height = 128;
   const ctx = canvas.getContext('2d');
+  const scale = 128 / preset.gridSize;
 
-  // 背景グラデーション（ソリッドカラーのみ）
-  const colors = ['#FF6B35', '#FFD60A', '#06D6A0', '#4CC9F0', '#7B2FBE', '#EF233C'];
-  const gridS = 16;
-  const cellW = canvas.width / gridS;
-  const cellH = canvas.height / gridS;
-
-  // ランダムシードをpromptから生成
-  let seed = 0;
-  for (const c of prompt) seed = (seed * 31 + c.charCodeAt(0)) % 1000;
-
-  function pseudoRand(n) {
-    seed = (seed * 1664525 + 1013904223) % 2147483647;
-    return Math.abs(seed % n);
-  }
-
-  // 背景
-  ctx.fillStyle = '#1A1A2E';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // カラフルなブロック
-  for (let y = 0; y < gridS; y++) {
-    for (let x = 0; x < gridS; x++) {
-      if (pseudoRand(3) !== 0) {
-        ctx.fillStyle = colors[pseudoRand(colors.length)];
-        ctx.fillRect(x * cellW, y * cellH, cellW - 1, cellH - 1);
-      }
+  for (let y = 0; y < preset.gridSize; y++) {
+    for (let x = 0; x < preset.gridSize; x++) {
+      const cell = preset.grid[y][x];
+      ctx.fillStyle = preset.palette[cell.colorIndex] || '#1A1A2E';
+      ctx.fillRect(x * scale, y * scale, scale, scale);
     }
   }
-
-  // 中央にテキスト
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 20px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('🎨', canvas.width / 2, canvas.height / 2);
 
   return canvas.toDataURL('image/png');
 }

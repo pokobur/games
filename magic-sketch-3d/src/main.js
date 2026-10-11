@@ -247,6 +247,17 @@ function setupAppEvents() {
     navigateTo('screen-canvas');
   });
 
+  // 今すぐARで空間に呼び出す（ダイレクト召喚）
+  const btnDirectAR = document.getElementById('btn-direct-ar');
+  if (btnDirectAR) {
+    btnDirectAR.addEventListener('click', () => {
+      audioManager.playTap();
+      const nameInput = document.getElementById('char-name-input');
+      const name = nameInput.value.trim() || 'なぞのいきもの';
+      setupARScreen(state.current3DModel, name);
+    });
+  }
+
   // おもちゃ箱に保存
   document.getElementById('btn-save-to-gallery').addEventListener('click', async () => {
     audioManager.playTap();
@@ -323,14 +334,23 @@ function setupAppEvents() {
     ShareManager.showShareModal(shareUrl);
   });
 
-  // AR画面から出る
+  // AR画面から出る（おもちゃ箱へ）
   document.getElementById('btn-exit-ar').addEventListener('click', () => {
     audioManager.playTap();
     navigateTo('screen-gallery');
   });
+
+  // AR画面から直接お絵かきに戻る
+  const btnArToCanvas = document.getElementById('btn-ar-to-canvas');
+  if (btnArToCanvas) {
+    btnArToCanvas.addEventListener('click', () => {
+      audioManager.playTap();
+      navigateTo('screen-canvas');
+    });
+  }
 }
 
-// 魔法の3D変換処理と演出アニメーション
+// 魔法のAR召喚演出と生成処理
 function runMagic3DConversion() {
   navigateTo('screen-magic');
   
@@ -342,36 +362,35 @@ function runMagic3DConversion() {
   const spContainer = magicScr.querySelector('.sparkles-container');
   spContainer.innerHTML = '';
   
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 26; i++) {
     const star = document.createElement('div');
     star.className = 'magic-star';
-    star.textContent = ['✨', '🌟', '🍭', '🔮', '💫'][Math.floor(Math.random() * 5)];
+    star.textContent = ['✨', '🌟', '🍭', '🔮', '💫', '💖'][Math.floor(Math.random() * 6)];
     star.style.position = 'absolute';
     star.style.left = `${Math.random() * 100}%`;
     star.style.top = `${Math.random() * 100}%`;
     star.style.fontSize = `${Math.random() * 1.5 + 1}rem`;
     star.style.transform = `scale(0)`;
-    star.style.transition = 'all 1.5s ease-out';
+    star.style.transition = 'all 0.9s ease-out';
     spContainer.appendChild(star);
     
-    // アニメーション発火
     setTimeout(() => {
-      star.style.transform = `scale(1.2) translateY(-50px) rotate(${Math.random() * 360}deg)`;
+      star.style.transform = `scale(1.2) translateY(-40px) rotate(${Math.random() * 360}deg)`;
       star.style.opacity = '0';
-    }, i * 50);
+    }, i * 30);
   }
 
-  // 擬似プログレスアニメーション (3秒間の演出)
+  // スムーズなプログレスバー演出 (0.8秒)
   let percent = 0;
   const interval = setInterval(() => {
-    percent += 4;
+    percent += 10;
     fill.style.width = `${percent}%`;
     if (percent >= 100) {
       clearInterval(interval);
     }
-  }, 100);
+  }, 70);
 
-  // バックグラウンドで3D生成
+  // バックグラウンドで空間召喚オブジェクト生成
   setTimeout(async () => {
     try {
       const canvas = document.getElementById('paint-canvas');
@@ -389,10 +408,10 @@ function runMagic3DConversion() {
       
     } catch (err) {
       clearInterval(interval);
-      alert(err.message || "3Dのまほうに しっぱいしちゃった。");
+      alert(err.message || "空間へのしょうかんに しっぱいしちゃった。");
       navigateTo('screen-canvas');
     }
-  }, 2800);
+  }, 800);
 }
 
 

@@ -541,6 +541,17 @@ export class ARSummoner {
         this.summonedObject.scale.x = scale * (1 - pulse);
         break;
     }
+
+    // 接地影（コンタクトシャドウ）を床面Y=0にピン留め＆ジャンプ時に縮小減衰
+    const contactShadow = this.summonedObject.children.find(c => c.userData && c.userData.isContactShadow);
+    if (contactShadow) {
+      contactShadow.position.y = -this.summonedObject.position.y + 0.001;
+      const heightRatio = Math.max(0, this.summonedObject.position.y / 0.5);
+      contactShadow.scale.setScalar(Math.max(0.35, 1 - heightRatio * 0.45));
+      if (contactShadow.material) {
+        contactShadow.material.opacity = Math.max(0.15, 0.7 * (1 - heightRatio * 0.5));
+      }
+    }
   }
 
   // レンダリングループ

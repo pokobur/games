@@ -269,6 +269,22 @@ body {
   z-index: 5;
 }
 
+.preview-action-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.preview-action-buttons .btn-giant {
+  width: 100%;
+  margin: 0;
+}
+
+
 
 /* ==================== HOME SCREEN ==================== */
 #screen-home {

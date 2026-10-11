@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>らくがき3Dしょうかん ✨ 魔法の3Dお絵かき</title>
+  <title>らくがきAR召喚 ✨ 魔法のお絵かき</title>
   <!-- Google Font Rounded -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,9 +36,9 @@
     <div class="logo-container">
       <div class="sparkle-effect">✨</div>
       <h1 class="main-title">
-        らくがき3D<br><span class="title-summon">召喚!</span>
+        らくがきAR<br><span class="title-summon">召喚!</span>
       </h1>
-      <p class="subtitle">〜キミのえが3Dになってうごきだす！〜</p>
+      <p class="subtitle">〜キミのえが空間に飛び出してうごきだす！〜</p>
     </div>
     
     <div class="home-buttons">
@@ -138,7 +138,7 @@
 
     <div class="action-footer">
       <button id="btn-generate-3d" class="btn-giant btn-sparkle">
-        ✨ 3Dのまほうをかける！
+        ✨ 空間にしょうかん！
       </button>
     </div>
   </section>
@@ -149,8 +149,8 @@
       <div class="magic-circle-decor"></div>
       <div class="magic-circle">🔮</div>
       <div class="sparkles-container"></div>
-      <h2 class="magic-status">まほうをかけているよ...</h2>
-      <p class="magic-hint">えが３Dの「おもちゃ」になっているよ！</p>
+      <h2 class="magic-status">まほうをかけているよ... ✨</h2>
+      <p class="magic-hint">キミのかいたえが 現実の空間にとびだすよ！</p>
       <div class="progress-bar-container">
         <div class="progress-bar-fill"></div>
       </div>
@@ -171,7 +171,7 @@
     <!-- 3D表示ビューア (ショーケース風) -->
     <div class="viewer-3d-outer">
       <div id="preview-3d-container" class="viewer-3d-container"></div>
-      <div class="viewer-badge">3Dおもちゃ</div>
+      <div class="viewer-badge">召喚プレビュー</div>
       <div class="viewer-hint-pill">👆 くるくる まわせるよ！</div>
     </div>
 
@@ -186,9 +186,12 @@
       </div>
     </div>
 
-    <div class="action-footer">
-      <button id="btn-save-to-gallery" class="btn-giant btn-primary">
-        🎁 おもちゃ箱にいれる！
+    <div class="action-footer preview-action-buttons">
+      <button id="btn-direct-ar" class="btn-giant btn-sparkle">
+        🚀 今すぐARで空間によびだす！
+      </button>
+      <button id="btn-save-to-gallery" class="btn-giant btn-secondary">
+        🎁 おもちゃ箱にいれる
       </button>
     </div>
   </section>
@@ -207,8 +210,8 @@
     <!-- おもちゃ箱グリッド -->
     <div id="gallery-grid" class="gallery-grid-container">
       <div class="empty-gallery-msg">
-        まだおもちゃがないよ。<br>
-        えをかいて、3Dにしてみてね！🎨
+        まだなかまがいないよ。<br>
+        えをかいて、空間によびだしてみてね！🎨
       </div>
     </div>
   </section>
@@ -223,6 +226,7 @@
     <div class="ar-ui-overlay">
       <div class="ar-header">
         <button id="btn-exit-ar" class="btn-back btn-small">🎁 おもちゃ箱</button>
+        <button id="btn-ar-to-canvas" class="btn-back btn-small">🎨 おえかき</button>
         <div class="ar-title-badge"><span id="ar-char-name">キャラクター</span></div>
       </div>
 

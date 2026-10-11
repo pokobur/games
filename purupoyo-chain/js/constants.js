@@ -11,7 +11,7 @@ const ROWS = 7;
 const startYThreshold = 210; // Upper deadline boundary
 const CELL_WIDTH = 410 / COLS;   // ~68.33px
 const CELL_HEIGHT = 470 / ROWS;  // ~67.14px
-const blockRadius = 33.5;        // Diameter ~67px: perfectly matches logical grid height
+const blockRadius = 30.5;        // Diameter ~61px: gives comfortable margin within 68px cells
 
 // Extended Vibrant Color Palette
 const BUBBLE_COLORS = {

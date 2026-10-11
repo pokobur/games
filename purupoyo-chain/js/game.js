@@ -74,6 +74,7 @@ let lastTickSecond = 0;
 let draggedCol = 0;
 let draggedRow = 0;
 let hasMovedThisTurn = false;
+let hasActuallySwapped = false;
 
 // Combo & Fever
 let currentCombo = 0;
@@ -327,7 +328,7 @@ function checkAndExecuteMatches() {
         gameState = STATE_MATCHING;
         setTimeout(() => {
             refillBlocks(poppedColumns);
-        }, 60);
+        }, 45);
     } else {
         if (currentCombo > 0) {
             addFloatingText("連鎖おわり！", 225, 400, '#ffffff', true);
@@ -535,6 +536,7 @@ Matter.Events.on(mouseConstraint, 'startdrag', function(event) {
         draggedBody.isSensor = true;
         dragStartTime = Date.now();
         lastTickSecond = 0;
+        hasActuallySwapped = false;
 
         draggedCol = body.column;
         draggedRow = body.row;
@@ -567,6 +569,16 @@ Matter.Events.on(mouseConstraint, 'enddrag', function() {
     if (gameState === STATE_DRAGGING && draggedBody) {
         draggedBody.isSensor = false;
         Matter.Body.setVelocity(draggedBody, { x: 0, y: 0 });
+
+        if (!hasActuallySwapped) {
+            // Player merely tapped/clicked without swapping: cancel turn cleanly without penalty!
+            gameState = STATE_IDLE;
+            draggedBody = null;
+            hasMovedThisTurn = false;
+            pendingGarbageCount = 0;
+            return;
+        }
+
         gameState = STATE_WAIT_SETTLE;
         draggedBody = null;
         hasMovedThisTurn = true;
@@ -624,13 +636,24 @@ function gameLoop() {
                 const prevCol = draggedCol;
                 const prevRow = draggedRow;
 
+                let nextCol = draggedCol;
+                let nextRow = draggedRow;
                 if (mCol !== draggedCol) {
-                    draggedCol += Math.sign(mCol - draggedCol);
+                    nextCol += Math.sign(mCol - draggedCol);
                 } else {
-                    draggedRow += Math.sign(mRow - draggedRow);
+                    nextRow += Math.sign(mRow - draggedRow);
                 }
 
-                const B = findBlockAtColumnRow(draggedCol, draggedRow, draggedBody);
+                const B = findBlockAtColumnRow(nextCol, nextRow, draggedBody);
+                if (B && B.colorName === 'gray') {
+                    // Gray blocks cannot be moved or passed through (pure obstacle)
+                    break;
+                }
+
+                draggedCol = nextCol;
+                draggedRow = nextRow;
+                hasActuallySwapped = true;
+
                 if (B) {
                     B.column = prevCol;
                     B.row = prevRow;
@@ -642,6 +665,16 @@ function gameLoop() {
             }
             draggedBody.column = draggedCol;
             draggedBody.row = draggedRow;
+
+            // Strict board boundary clamp for dragged body
+            const minX = 20 + blockRadius + 4;
+            const maxX = 430 - blockRadius - 4;
+            const minY = startYThreshold + blockRadius + 4;
+            const maxY = 680 - blockRadius - 4;
+            Matter.Body.setPosition(draggedBody, {
+                x: Math.max(minX, Math.min(maxX, draggedBody.position.x)),
+                y: Math.max(minY, Math.min(maxY, draggedBody.position.y))
+            });
         }
 
         // Wobble spring physics & target position interpolation
@@ -695,8 +728,14 @@ function gameLoop() {
         ctx.translate(dx, dy);
     }
 
-    // Board Outline & Danger Deadline
-    drawBoardOutline(ctx);
+    // 1. Board Background & subtle grid
+    drawBoardBackground(ctx);
+
+    // 2. Strict Board Interior Clipping (Prevents falling blocks from spilling into boss area or outside borders!)
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(20, startYThreshold, 410, 470, 18);
+    ctx.clip();
 
     // Connecting bridges for identical adjacent blocks
     const contactThreshold = 72;
@@ -738,13 +777,6 @@ function gameLoop() {
         }
     });
 
-    // Draw Dragged Block on top
-    if (draggedBody) {
-        drawBubble(ctx, draggedBody.position.x, draggedBody.position.y, blockRadius, draggedBody.colorInfo,
-                   draggedBody.angle, gameState, true, false, 0, draggedBody.blinkTimer, draggedBody.blinkDuration,
-                   draggedBody.wobbleX, draggedBody.wobbleY);
-    }
-
     // Draw Popping Animation
     for (let i = animatingPops.length - 1; i >= 0; i--) {
         const b = animatingPops[i];
@@ -755,6 +787,18 @@ function gameLoop() {
             animatingPops.splice(i, 1);
         }
     }
+
+    ctx.restore(); // End Board Interior Clipping
+
+    // 3. Draw Dragged Block on top (clamped within board bounds)
+    if (draggedBody) {
+        drawBubble(ctx, draggedBody.position.x, draggedBody.position.y, blockRadius, draggedBody.colorInfo,
+                   draggedBody.angle, gameState, true, false, 0, draggedBody.blinkTimer, draggedBody.blinkDuration,
+                   draggedBody.wobbleX, draggedBody.wobbleY);
+    }
+
+    // 4. Board Foreground Frame & Badges (Rendered over block edges so frame line is always 100% crisp!)
+    drawBoardForeground(ctx);
 
     // Draw Particles & Projectiles
     updateAndDrawParticles(ctx);
@@ -813,12 +857,12 @@ function gameLoop() {
         let allSettled = true;
         waitSettleSafetyTimer++;
 
-        if (waitSettleSafetyTimer < 10) {
+        if (waitSettleSafetyTimer < 6) {
             allSettled = false;
         } else {
             for (let i = 0; i < blocks.length; i++) {
                 const b = blocks[i];
-                if (b.velocity.y > 0.25 || Math.abs(b.velocity.x) > 0.25) {
+                if (b.velocity.y > 0.35 || Math.abs(b.velocity.x) > 0.35) {
                     allSettled = false;
                     break;
                 }
@@ -1200,10 +1244,10 @@ if (soundBtn) {
     });
 }
 
-// Pre-drop background ambient bubbles
-for (let i = 0; i < 14; i++) {
-    const x = Math.random() * (410 - 60) + 30;
-    const y = Math.random() * 300 - 150;
+// Pre-drop background ambient bubbles inside board
+for (let i = 0; i < 12; i++) {
+    const x = Math.random() * 330 + 60;
+    const y = Math.random() * 300 + 240;
     createBlock(x, y);
 }
 

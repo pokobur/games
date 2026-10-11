@@ -186,10 +186,9 @@ function drawBubble(ctx, x, y, radius, colorInfo, angle, state, isGrabbed, isMat
     ctx.restore();
 }
 
-// Draw Board Outline and Deadlines
-function drawBoardOutline(ctx) {
+// Draw Board Background and Grid (Rendered BEFORE blocks)
+function drawBoardBackground(ctx) {
     const boardLeft = 20;
-    const boardRight = 430;
     const boardWidth = 410;
     const boardHeight = 470;
     const boardBottom = startYThreshold + boardHeight;
@@ -197,13 +196,13 @@ function drawBoardOutline(ctx) {
     ctx.save();
 
     // Soft glassmorphic background for puzzle area
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
     ctx.beginPath();
     ctx.roundRect(boardLeft, startYThreshold, boardWidth, boardHeight, 18);
     ctx.fill();
 
     // Symmetrical subtle grid lines
-    ctx.strokeStyle = 'rgba(203, 213, 225, 0.4)';
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.45)';
     ctx.lineWidth = 1;
     for (let c = 1; c < COLS; c++) {
         const x = boardLeft + c * CELL_WIDTH;
@@ -213,13 +212,6 @@ function drawBoardOutline(ctx) {
         ctx.stroke();
     }
 
-    // Outer border with neon glow
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.roundRect(boardLeft, startYThreshold, boardWidth, boardHeight, 18);
-    ctx.stroke();
-
     // Danger Deadline (Upper red warning line)
     const dangerGlow = (inDangerZone && Math.floor(Date.now() / 200) % 2 === 0);
     ctx.strokeStyle = dangerGlow ? '#ef4444' : 'rgba(244, 63, 94, 0.65)';
@@ -227,17 +219,43 @@ function drawBoardOutline(ctx) {
     ctx.setLineDash([8, 6]);
     ctx.beginPath();
     ctx.moveTo(boardLeft, startYThreshold);
-    ctx.lineTo(boardRight, startYThreshold);
+    ctx.lineTo(boardLeft + boardWidth, startYThreshold);
     ctx.stroke();
     ctx.setLineDash([]);
 
+    ctx.restore();
+}
+
+// Draw Board Foreground Border & Badges (Rendered AFTER blocks so frame is always clean)
+function drawBoardForeground(ctx) {
+    const boardLeft = 20;
+    const boardWidth = 410;
+    const boardHeight = 470;
+    const boardRight = boardLeft + boardWidth;
+
+    ctx.save();
+
+    // Outer border with neon glow
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.roundRect(boardLeft, startYThreshold, boardWidth, boardHeight, 18);
+    ctx.stroke();
+
     // Deadline warning badge
-    ctx.font = '900 10px "M PLUS Rounded 1c"';
+    const dangerGlow = (inDangerZone && Math.floor(Date.now() / 200) % 2 === 0);
+    ctx.font = '900 10.5px "M PLUS Rounded 1c"';
     ctx.textAlign = 'right';
     ctx.fillStyle = dangerGlow ? '#ef4444' : '#f43f5e';
-    ctx.fillText("⚠️ DEADLINE ⚠️", boardRight - 8, startYThreshold - 6);
+    ctx.fillText("⚠️ DEADLINE ⚠️", boardRight - 10, startYThreshold - 6);
 
     ctx.restore();
+}
+
+// Legacy combined wrapper
+function drawBoardOutline(ctx) {
+    drawBoardBackground(ctx);
+    drawBoardForeground(ctx);
 }
 
 // Draw Animated Boss Monster
@@ -763,13 +781,42 @@ function drawTimerUI(ctx) {
     const remaining = Math.max(0, dragDurationLimit - elapsed);
     const progress = remaining / dragDurationLimit;
 
-    // Timer Bar
-    const barWidth = 410 * progress;
     ctx.save();
-    ctx.fillStyle = progress > 0.3 ? '#38bdf8' : '#ef4444';
-    ctx.fillRect(20, startYThreshold - 6, barWidth, 4);
 
-    // Pulsing Countdown Text
+    // 1. Background Track for Timer Bar
+    const barX = 20;
+    const barY = startYThreshold - 13;
+    const barW = 410;
+    const barH = 7;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, barW, barH, 3.5);
+    ctx.fill();
+
+    // 2. Dynamic Gradient Progress Fill
+    const fillWidth = barW * progress;
+    if (fillWidth > 0) {
+        const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+        if (progress > 0.5) {
+            grad.addColorStop(0, '#10b981');
+            grad.addColorStop(1, '#06b6d4');
+        } else if (progress > 0.25) {
+            grad.addColorStop(0, '#f59e0b');
+            grad.addColorStop(1, '#f97316');
+        } else {
+            grad.addColorStop(0, '#ef4444');
+            grad.addColorStop(1, '#f43f5e');
+        }
+        ctx.fillStyle = grad;
+        ctx.shadowColor = progress < 0.25 ? '#ef4444' : '#06b6d4';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, fillWidth, barH, 3.5);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    // 3. Pulsing Countdown Text
     const secondsLeft = (remaining / 1000).toFixed(1);
     const isUrgent = progress < 0.35;
     let shakeX = 0, shakeY = 0;
@@ -779,13 +826,13 @@ function drawTimerUI(ctx) {
     }
 
     ctx.textAlign = 'center';
-    ctx.font = '900 32px "M PLUS Rounded 1c"';
-    ctx.lineWidth = 6;
+    ctx.font = '900 34px "M PLUS Rounded 1c"';
+    ctx.lineWidth = 7;
     ctx.strokeStyle = '#ffffff';
     ctx.fillStyle = isUrgent ? '#ef4444' : '#0284c7';
 
     const textX = 225 + shakeX;
-    const textY = startYThreshold - 50 + shakeY;
+    const textY = startYThreshold - 48 + shakeY;
     ctx.strokeText(secondsLeft, textX, textY);
     ctx.fillText(secondsLeft, textX, textY);
 

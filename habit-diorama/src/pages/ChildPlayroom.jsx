@@ -2,92 +2,111 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PhaserGame from '../game/PhaserGame';
 import GachaModal from '../components/GachaModal';
 import TaskCompleteEffect from '../components/TaskCompleteEffect';
-import { getTasks, getInventory, getPlacedItems, addPendingApproval, getPendingApprovals } from '../utils/storage';
+import {
+  getTasks,
+  getInventory,
+  getPlacedItems,
+  addPendingApproval,
+  getPendingApprovals,
+  getPendingGachas,
+  consumePendingGacha,
+  getStreakCount,
+  getDioramaTheme,
+  setDioramaTheme,
+  DIORAMA_THEMES,
+  removeFromPlaced,
+  clearAllPlaced,
+  subscribeDataChange,
+} from '../utils/storage';
+import { playSubmitSound, playClickSound, playRemoveSound } from '../utils/sound';
 
 export default function ChildPlayroom() {
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(() => getTasks());
+  const [inventory, setInventory] = useState(() => getInventory());
+  const [placedItems, setPlacedItems] = useState(() => getPlacedItems());
+  const [pendingIds, setPendingIds] = useState(() => getPendingApprovals().map(p => p.taskId));
+  const [pendingGachas, setPendingGachas] = useState(() => getPendingGachas());
+  const [streak, setStreak] = useState(() => getStreakCount());
+  const [theme, setTheme] = useState(() => getDioramaTheme());
+
+  // モーダル・演出
   const [showGacha, setShowGacha] = useState(false);
-  const [currentDifficulty, setCurrentDifficulty] = useState(1);
+  const [currentGachaTicket, setCurrentGachaTicket] = useState(null);
   const [showEffect, setShowEffect] = useState(false);
   const [completedTaskName, setCompletedTaskName] = useState('');
-  const [inventory, setInventory] = useState([]);
-  const [dioramaKey, setDioramaKey] = useState(0);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [placedCount, setPlacedCount] = useState(0);
-  const [pendingIds, setPendingIds] = useState([]);
-  const [justSubmitted, setJustSubmitted] = useState(false);
 
-  useEffect(() => {
-    refreshData();
-    // 承認チェック用のポーリング（3秒ごと）
-    const interval = setInterval(() => {
-      checkForApprovedRewards();
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  // 選択中アイテム（インベントリから配置）
+  const [selectedItem, setSelectedItem] = useState(null);
+  // 選択中配置済みアイテム（撤去など）
+  const [selectedPlaced, setSelectedPlaced] = useState(null);
 
   const refreshData = useCallback(() => {
     setTasks(getTasks());
     setInventory(getInventory());
-    setPlacedCount(getPlacedItems().length);
+    const placed = getPlacedItems();
+    setPlacedItems(placed);
     const pending = getPendingApprovals();
     setPendingIds(pending.map(p => p.taskId));
+    const gachas = getPendingGachas();
+    setPendingGachas(gachas);
+    setStreak(getStreakCount());
+    setTheme(getDioramaTheme());
   }, []);
 
-  const checkForApprovedRewards = () => {
-    // タスクが承認されて完了状態になったかチェック
-    const currentTasks = getTasks();
-    const pending = getPendingApprovals();
-    const pendingTaskIds = pending.map(p => p.taskId);
-    
-    // 承認待ちだったタスクが完了になっていたら === 親が承認した
-    setTasks(currentTasks);
-    setPendingIds(pendingTaskIds);
-    setInventory(getInventory());
-  };
+  useEffect(() => {
+    // イベント購読（即時反映）
+    const unsubscribe = subscribeDataChange(() => {
+      refreshData();
+    });
+    // バックアップの定期チェック（別ブラウザ・タブ用）
+    const interval = setInterval(refreshData, 3000);
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, [refreshData]);
 
+  // タスク完了申請
   const handleSubmitTask = (task) => {
-    // 子どもは「できたよ！」を送信するだけ
+    playSubmitSound();
     addPendingApproval(task.id, task.title, task.difficulty);
     setCompletedTaskName(task.title);
     setShowEffect(true);
     refreshData();
-    setJustSubmitted(true);
   };
 
   const handleEffectFinish = () => {
     setShowEffect(false);
-    if (justSubmitted) {
-      setJustSubmitted(false);
-      // ガチャは開かない（親の承認待ち）
-    }
   };
 
-  // 親画面から承認された時にガチャを起動するための監視
-  // 承認されたことを検知するためにポーリングで状態チェック
-  const handleOpenGacha = (difficulty) => {
-    setCurrentDifficulty(difficulty);
+  // 未受け取りガチャを開く
+  const handleOpenTicketGacha = (ticket) => {
+    playClickSound();
+    setCurrentGachaTicket(ticket);
     setShowGacha(true);
   };
 
-  const handleGachaResult = (part) => {
-    refreshData();
-  };
-
+  // ガチャ終了時
   const handleGachaClose = () => {
+    if (currentGachaTicket) {
+      consumePendingGacha(currentGachaTicket.id);
+      setCurrentGachaTicket(null);
+    }
     setShowGacha(false);
     refreshData();
   };
 
   const handleSelectInventoryItem = (item) => {
+    playClickSound();
     if (selectedItem && selectedItem.id === item.id) {
       setSelectedItem(null);
     } else {
       setSelectedItem(item);
+      setSelectedPlaced(null);
     }
   };
 
-  const handleItemPlaced = (item) => {
+  const handleItemPlaced = () => {
     setSelectedItem(null);
     refreshData();
   };
@@ -96,32 +115,103 @@ export default function ChildPlayroom() {
     refreshData();
   }, [refreshData]);
 
+  // テーマ切り替え
+  const handleThemeChange = (newTheme) => {
+    playClickSound();
+    setTheme(newTheme);
+    setDioramaTheme(newTheme);
+  };
+
+  // 選択したパーツをリュックに戻す
+  const handleRemoveSelectedPlaced = () => {
+    if (!selectedPlaced) return;
+    playRemoveSound();
+    removeFromPlaced(selectedPlaced.placedAt);
+    setSelectedPlaced(null);
+    refreshData();
+  };
+
+  // 全パーツを片付ける
+  const handleClearAll = () => {
+    if (placedItems.length === 0) return;
+    if (window.confirm('まちのパーツを ぜんぶ リュックに もどす？')) {
+      playRemoveSound();
+      clearAllPlaced();
+      setSelectedPlaced(null);
+      refreshData();
+    }
+  };
+
   const unfinishedTasks = tasks.filter(t => !t.completed);
   const finishedTasks = tasks.filter(t => t.completed);
 
+  // まちの発展レベル計算
+  const placedCount = placedItems.length;
+  let townLevel = 1;
+  let townTitle = 'ちいさな ひろば';
+  if (placedCount >= 18) {
+    townLevel = 4;
+    townTitle = '大としかい（メガシティ）🌟';
+  } else if (placedCount >= 10) {
+    townLevel = 3;
+    townTitle = 'にぎやかな まち 🏢';
+  } else if (placedCount >= 4) {
+    townLevel = 2;
+    townTitle = 'かわいい むら 🏡';
+  }
+
   return (
     <div className="playroom-container">
-      {/* エフェクト */}
+      {/* タスク完了ファンファーレ＆紙吹雪 */}
       <TaskCompleteEffect
         isActive={showEffect}
         taskName={completedTaskName}
         onFinish={handleEffectFinish}
       />
 
-      {/* ガチャ */}
+      {/* ガチャモーダル */}
       <GachaModal
         isOpen={showGacha}
         onClose={handleGachaClose}
-        onResult={handleGachaResult}
-        difficulty={currentDifficulty}
+        difficulty={currentGachaTicket ? currentGachaTicket.difficulty : 1}
+        ticketTitle={currentGachaTicket ? currentGachaTicket.taskTitle : ''}
       />
 
-      {/* タスク一覧 */}
+      {/* トップステータスバー（連続記録＆未受け取りガチャ） */}
+      <div className="playroom-hero-bar">
+        <div className="streak-badge">
+          <span className="streak-icon">🔥</span>
+          <span className="streak-text">
+            まいにちれんぞく <strong>{streak}</strong> にちクリア中！
+          </span>
+        </div>
+
+        {pendingGachas.length > 0 && (
+          <div className="pending-gacha-alert">
+            <span className="bounce-icon">🎁</span>
+            <span>おうちのひとから <strong>{pendingGachas.length}こ</strong> のごほうび！</span>
+            <button
+              className="claim-gacha-btn pulse-anim"
+              onClick={() => handleOpenTicketGacha(pendingGachas[0])}
+            >
+              🎰 ガチャをまわす！
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* タスク一覧（子ども向け大きくポップなボタン） */}
       <div className="task-list">
-        <h2>⭐ やることリスト</h2>
+        <div className="section-title-wrap">
+          <h2>⭐ きょうの やることリスト</h2>
+          <span className="task-counter-pill">
+            のこり {unfinishedTasks.length} / ぜんぶで {tasks.length}
+          </span>
+        </div>
+
         {tasks.length === 0 ? (
           <div className="empty-tasks">
-            <p>タスクがまだないよ！<br/>おやの「かんりがめん」からタスクをついかしてね。</p>
+            <p>タスクがまだないよ！<br />おとなの「⚙️ おやよう」から タスクを つくってもらおう！</p>
           </div>
         ) : (
           <>
@@ -135,9 +225,20 @@ export default function ChildPlayroom() {
                     className={`task-btn ${isPending ? 'task-btn-pending' : ''}`}
                     disabled={isPending}
                   >
-                    <span className="task-btn-emoji">⭐</span>
-                    <span className="task-btn-label">{t.title}</span>
-                    {isPending && <span className="task-pending-badge">しんさちゅう…</span>}
+                    <span className="task-btn-emoji">
+                      {isPending ? '⏳' : '⭐'}
+                    </span>
+                    <div className="task-btn-content">
+                      <span className="task-btn-label">{t.title}</span>
+                      <span className="task-btn-diff">
+                        {'★'.repeat(t.difficulty || 1)}
+                      </span>
+                    </div>
+                    {isPending ? (
+                      <span className="task-pending-badge">おうちのひとに おねがいちゅう…</span>
+                    ) : (
+                      <span className="task-do-badge">できた！</span>
+                    )}
                   </button>
                 );
               })}
@@ -145,10 +246,12 @@ export default function ChildPlayroom() {
 
             {finishedTasks.length > 0 && (
               <div className="finished-section">
-                <h3>✅ クリアずみ！</h3>
+                <h3>🎉 きょう クリアしたよ！（{finishedTasks.length}こ）</h3>
                 <div className="finished-list">
                   {finishedTasks.map(t => (
-                    <span key={t.id} className="finished-badge">{t.title}</span>
+                    <span key={t.id} className="finished-badge">
+                      ✅ {t.title}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -157,34 +260,94 @@ export default function ChildPlayroom() {
         )}
       </div>
 
-      {/* ジオラマ */}
+      {/* ジオラマまちづくりエリア */}
       <div className="diorama-area">
-        <h2>🏘️ ぼくの・わたしの まち</h2>
+        <div className="diorama-header">
+          <div className="town-level-info">
+            <h2>🏘️ ぼく・わたしの まち</h2>
+            <div className="town-badge">
+              Lv.{townLevel} {townTitle}（パーツ: {placedCount}こ）
+            </div>
+          </div>
+
+          {/* まちのテーマ切り替え */}
+          <div className="theme-selector">
+            <span className="theme-label">きせかえ:</span>
+            {DIORAMA_THEMES.map(th => (
+              <button
+                key={th.id}
+                onClick={() => handleThemeChange(th.id)}
+                className={`theme-btn ${theme === th.id ? 'active' : ''}`}
+                title={th.name}
+              >
+                {th.icon} {th.name.split('（')[0]}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {selectedItem && (
           <div className="placement-hint">
-            ✨ 「{selectedItem.name}」をおくばしょをえらんでね！（まちをクリック）
+            ✨ <strong>「{selectedItem.emoji} {selectedItem.name}」</strong> をおく場所をクリックしてね！
+            <button className="cancel-place-btn" onClick={() => setSelectedItem(null)}>
+              ✕ やめる
+            </button>
+          </div>
+        )}
+
+        {selectedPlaced && (
+          <div className="selected-placed-toolbar">
+            <span>
+              えらんだパーツ: <strong>{selectedPlaced.emoji} {selectedPlaced.name}</strong>
+            </span>
+            <button className="remove-item-btn" onClick={handleRemoveSelectedPlaced}>
+              🎒 リュックにもどす
+            </button>
+            <button className="cancel-place-btn" onClick={() => setSelectedPlaced(null)}>
+              とじる
+            </button>
           </div>
         )}
 
         <PhaserGame
-          key={dioramaKey}
+          theme={theme}
           selectedItem={selectedItem}
           onItemPlaced={handleItemPlaced}
           onPlacedUpdate={handlePlacedUpdate}
+          onSelectPlacedItem={(item) => setSelectedPlaced(item)}
+          selectedPlacedId={selectedPlaced ? selectedPlaced.placedAt : null}
         />
 
-        <div className="diorama-help">
-          <span>🖱️ ドラッグ: いどう</span>
-          <span>📱 ながおし: もどす</span>
+        <div className="diorama-footer-actions">
+          <div className="diorama-help">
+            <span>🖱️ ドラッグ: いどう</span>
+            <span>👆 タップ: えらんでリュックへもどす</span>
+          </div>
+          {placedCount > 0 && (
+            <button className="clean-all-btn" onClick={handleClearAll}>
+              🧹 まちをかたづける
+            </button>
+          )}
         </div>
       </div>
 
-      {/* もちものパネル */}
+      {/* もちものパネル（リュック） */}
       <div className="inventory-panel">
-        <h3>🎒 もちもの {inventory.length > 0 && <span className="inventory-count">{inventory.length}</span>}</h3>
+        <div className="inventory-header">
+          <h3>
+            🎒 まちのリュック（もちもの）
+            {inventory.length > 0 && <span className="inventory-count">{inventory.length}こ</span>}
+          </h3>
+          <span className="inventory-sub">タップして まちに おいてみよう！</span>
+        </div>
+
         {inventory.length === 0 ? (
-          <p className="inventory-empty">まだパーツがないよ。タスクをクリアしてゲットしよう！</p>
+          <div className="inventory-empty-box">
+            <p className="inventory-empty">
+              まだパーツがないよ！<br />
+              タスクをクリアしておうちのひとにしょうにんしてもらうと、ガチャでパーツがもらえるよ🎁
+            </p>
+          </div>
         ) : (
           <div className="inventory-grid">
             {inventory.map((item, i) => (
@@ -192,10 +355,11 @@ export default function ChildPlayroom() {
                 key={item.id || i}
                 className={`inventory-slot ${selectedItem && selectedItem.id === item.id ? 'selected' : ''}`}
                 onClick={() => handleSelectInventoryItem(item)}
-                title={`${item.name}をせっち`}
+                title={`${item.name}をおく`}
               >
                 <span className="inventory-slot-emoji">{item.emoji}</span>
                 <span className="inventory-slot-name">{item.name}</span>
+                <span className="inventory-slot-stars">{'★'.repeat(item.rarity || 1)}</span>
               </button>
             ))}
           </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { rollGacha, addToInventory } from '../utils/storage';
+import { playGachaSpinSound, playGachaWinSound, playClickSound } from '../utils/sound';
 
 const GACHA_STATES = {
   SPINNING: 'spinning',
@@ -8,7 +9,7 @@ const GACHA_STATES = {
 
 const EMOJIS = ['🏠', '🌳', '🌸', '🚗', '🚃', '🏪', '💧', '🪑', '🛝', '🏰', '⛲', '🏗️'];
 
-export default function GachaModal({ isOpen, onClose, onResult, difficulty }) {
+export default function GachaModal({ isOpen, onClose, onResult, difficulty = 1, ticketTitle = '' }) {
   const [state, setState] = useState(GACHA_STATES.SPINNING);
   const [displayEmoji, setDisplayEmoji] = useState('❓');
   const [result, setResult] = useState(null);
@@ -27,10 +28,11 @@ export default function GachaModal({ isOpen, onClose, onResult, difficulty }) {
     hasStarted.current = true;
 
     let count = 0;
-    const maxCount = 20 + Math.floor(Math.random() * 10);
+    const maxCount = 22 + Math.floor(Math.random() * 8);
 
     const interval = setInterval(() => {
       setDisplayEmoji(EMOJIS[Math.floor(Math.random() * EMOJIS.length)]);
+      playGachaSpinSound();
       count++;
       if (count >= maxCount) {
         clearInterval(interval);
@@ -38,16 +40,18 @@ export default function GachaModal({ isOpen, onClose, onResult, difficulty }) {
         setResult(part);
         setDisplayEmoji(part.emoji);
         setState(GACHA_STATES.REVEAL);
+        playGachaWinSound(part.rarity);
       }
-    }, 80);
+    }, 75);
 
     return () => clearInterval(interval);
   }, [isOpen, difficulty]);
 
   const handleCollect = () => {
+    playClickSound();
     if (result) {
       addToInventory(result);
-      onResult(result);
+      if (onResult) onResult(result);
     }
     onClose();
   };
@@ -60,25 +64,41 @@ export default function GachaModal({ isOpen, onClose, onResult, difficulty }) {
         <div className="gacha-machine">
           <div className="gacha-title">🎰 ガチャタイム！</div>
 
-          <div className={`gacha-display ${state}`}>
+          {ticketTitle && (
+            <p className="gacha-ticket-title">
+              ⭐ 「{ticketTitle}」の ごほうび！
+            </p>
+          )}
+
+          <div className={`gacha-display ${state} ${result && result.rarity >= 3 ? 'super-rare' : ''}`}>
             <span className="gacha-emoji">{displayEmoji}</span>
           </div>
 
           {state === GACHA_STATES.REVEAL && result && (
             <div className="gacha-result-info">
+              <div className="rarity-badge">
+                {'⭐'.repeat(result.rarity)}
+                {result.rarity === 3 ? ' レア！' : ''}
+              </div>
               <p className="gacha-result-name">
-                <span className="rarity-stars">{'⭐'.repeat(result.rarity)}</span>
-                <br />
-                「{result.name}」をゲット！
+                「{result.name}」を ゲット！
               </p>
-              <button className="gacha-collect-btn" onClick={handleCollect}>
-                🎁 うけとる！
+              {result.desc && (
+                <p className="gacha-result-desc">{result.desc}</p>
+              )}
+              <button className="gacha-collect-btn pulse-anim" onClick={handleCollect}>
+                🎁 まちのリュックにいれる！
               </button>
             </div>
           )}
 
           {state === GACHA_STATES.SPINNING && (
-            <p className="gacha-spinning-text">ドキドキ...</p>
+            <div className="gacha-spinning-container">
+              <p className="gacha-spinning-text">なにが でるかな...？</p>
+              <div className="gacha-spin-dots">
+                <span>●</span><span>●</span><span>●</span>
+              </div>
+            </div>
           )}
         </div>
       </div>

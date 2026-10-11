@@ -12,6 +12,10 @@ export class PaintCanvas {
     
     this.lastX = 0;
     this.lastY = 0;
+    this.strokeMinX = 0;
+    this.strokeMinY = 0;
+    this.strokeMaxX = 0;
+    this.strokeMaxY = 0;
     
     // Undo / Redo スタック
     this.undoStack = [];
@@ -182,6 +186,10 @@ export class PaintCanvas {
     const { x, y } = this.getCoordinates(e);
     this.lastX = x;
     this.lastY = y;
+    this.strokeMinX = x;
+    this.strokeMaxX = x;
+    this.strokeMinY = y;
+    this.strokeMaxY = y;
 
     if (this.currentTool === 'bucket') {
       this.floodFill(Math.round(x), Math.round(y), this.currentColor);
@@ -195,6 +203,11 @@ export class PaintCanvas {
     if (!this.isDrawing || this.currentTool === 'bucket') return;
     const { x, y } = this.getCoordinates(e);
     
+    this.strokeMinX = Math.min(this.strokeMinX, x);
+    this.strokeMaxX = Math.max(this.strokeMaxX, x);
+    this.strokeMinY = Math.min(this.strokeMinY, y);
+    this.strokeMaxY = Math.max(this.strokeMaxY, y);
+
     this.drawSegment(this.lastX, this.lastY, x, y);
     
     this.lastX = x;
@@ -226,53 +239,55 @@ export class PaintCanvas {
   stopDrawing() {
     if (this.isDrawing) {
       this.isDrawing = false;
-      this.smoothCanvasLines(); // 離した瞬間に少し線を滑らかに補正
+      if (this.currentTool === 'pen') {
+        const pad = this.brushSize + 4;
+        this.smoothCanvasLines({
+          minX: Math.max(1, Math.floor(this.strokeMinX - pad)),
+          maxX: Math.min(this.canvas.width - 2, Math.ceil(this.strokeMaxX + pad)),
+          minY: Math.max(1, Math.floor(this.strokeMinY - pad)),
+          maxY: Math.min(this.canvas.height - 2, Math.ceil(this.strokeMaxY + pad))
+        });
+      }
     }
   }
 
-  // 輪郭自動補正 (線のはみ出しや隙間をゆるやかに自動補正する機能)
-  smoothCanvasLines() {
-    // 描いた境界線のアンチエイリアシング/隙間のクローズを行うため、
-    // キャンバスに微細なブラーとアルファしきい値処理を施し、ガタつきを整えます。
-    const imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-    const data = imgData.data;
+  // 輪郭自動補正 (バウンディングボックス限定の高速平滑化フィルタ)
+  smoothCanvasLines(bbox) {
     const width = this.canvas.width;
     const height = this.canvas.height;
-    
-    // 超高速の平滑化フィルタ (近傍平均による簡易ブラー処理)
-    // エッジのギザギザを取り除き、3D化した際に滑らかな表面にします。
+    const minX = bbox ? bbox.minX : 1;
+    const maxX = bbox ? bbox.maxX : width - 2;
+    const minY = bbox ? bbox.minY : 1;
+    const maxY = bbox ? bbox.maxY : height - 2;
+    if (minX >= maxX || minY >= maxY) return;
+
+    const imgData = this.ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
     const temp = new Uint8ClampedArray(data);
     
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
         const idx = (y * width + x) * 4;
         if (temp[idx + 3] === 0) continue; // 透明箇所はスキップ
         
-        // 周囲3x3のアルファ値を平均
         let sumA = 0;
-        let count = 0;
         for (let ky = -1; ky <= 1; ky++) {
           for (let kx = -1; kx <= 1; kx++) {
-            const kIdx = ((y + ky) * width + (x + kx)) * 4;
-            sumA += temp[kIdx + 3];
-            count++;
+            sumA += temp[((y + ky) * width + (x + kx)) * 4 + 3];
           }
         }
-        
-        const avgA = sumA / count;
-        // アルファ値が低すぎる場合は少し減衰、高い場合は保持
+        const avgA = sumA / 9;
         if (avgA < 120) {
           data[idx + 3] = Math.max(0, avgA - 10);
         } else {
-          data[idx + 3] = Math.min(255, avgA + 15); // 隙間を埋めるように少し太らせる
+          data[idx + 3] = Math.min(255, avgA + 15);
         }
       }
     }
     this.ctx.putImageData(imgData, 0, 0);
   }
 
-  // バケツ塗りつぶし (Flood Fill アルゴリズム)
-  // TypedArray (Uint32Array) を用いて、ブラウザ内で超高速に動作させます。
+  // 高速バケツ塗りつぶし (O(1) スタック & カラー距離トレランス対応)
   floodFill(startX, startY, fillColorHex) {
     const width = this.canvas.width;
     const height = this.canvas.height;
@@ -289,49 +304,72 @@ export class PaintCanvas {
     const a = 255;
     
     const fillCol = (a << 24) | (b << 16) | (g << 8) | r;
-    
-    // ピクセルバッファを32ビットで操作して高速化
     const buffer = new Uint32Array(data.buffer);
     
-    const targetIdx = (startY * width + startX);
+    const targetIdx = startY * width + startX;
     const targetCol = buffer[targetIdx];
     
     if (targetCol === fillCol) return; // 同じ色なら何もしない
     
-    // アルファ値やカラー距離の比較用関数
-    const isMatch = (color1, color2) => {
-      if (color1 === color2) return true;
-      // 透明部分同士の塗りつぶしのために、アルファが0に近い場合は類似とみなす
-      const a1 = (color1 >> 24) & 0xff;
-      const a2 = (color2 >> 24) & 0xff;
-      if (a1 < 10 && a2 < 10) return true;
-      return false;
+    // ターゲットピクセルのRGBA分解
+    const tr = targetCol & 0xff;
+    const tg = (targetCol >> 8) & 0xff;
+    const tb = (targetCol >> 16) & 0xff;
+    const ta = (targetCol >> 24) & 0xff;
+    const isTargetTransparent = ta < 20;
+    const tolerance = 32;
+
+    const isMatch = (pixelVal) => {
+      if (pixelVal === targetCol) return true;
+      const pa = (pixelVal >> 24) & 0xff;
+      if (isTargetTransparent) {
+        return pa < 20;
+      }
+      if (pa < 20) return false;
+      const pr = pixelVal & 0xff;
+      const pg = (pixelVal >> 8) & 0xff;
+      const pb = (pixelVal >> 16) & 0xff;
+      return Math.abs(pr - tr) <= tolerance &&
+             Math.abs(pg - tg) <= tolerance &&
+             Math.abs(pb - tb) <= tolerance;
     };
     
-    const queue = [[startX, startY]];
+    // 高速スタックベース走査 (O(1) pop)
+    const stack = [targetIdx];
     buffer[targetIdx] = fillCol;
     
-    let safetyCounter = 0;
-    const maxPixels = width * height;
-    
-    while (queue.length > 0 && safetyCounter < maxPixels) {
-      safetyCounter++;
-      const [cx, cy] = queue.shift();
+    while (stack.length > 0) {
+      const idx = stack.pop();
+      const cx = idx % width;
+      const cy = (idx / width) | 0;
       
-      const directions = [
-        [cx + 1, cy],
-        [cx - 1, cy],
-        [cx, cy + 1],
-        [cx, cy - 1]
-      ];
-      
-      for (const [nx, ny] of directions) {
-        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-          const idx = ny * width + nx;
-          if (isMatch(buffer[idx], targetCol)) {
-            buffer[idx] = fillCol;
-            queue.push([nx, ny]);
-          }
+      // 4方向近傍を走査
+      if (cx + 1 < width) {
+        const right = idx + 1;
+        if (isMatch(buffer[right])) {
+          buffer[right] = fillCol;
+          stack.push(right);
+        }
+      }
+      if (cx - 1 >= 0) {
+        const left = idx - 1;
+        if (isMatch(buffer[left])) {
+          buffer[left] = fillCol;
+          stack.push(left);
+        }
+      }
+      if (cy + 1 < height) {
+        const down = idx + width;
+        if (isMatch(buffer[down])) {
+          buffer[down] = fillCol;
+          stack.push(down);
+        }
+      }
+      if (cy - 1 >= 0) {
+        const up = idx - width;
+        if (isMatch(buffer[up])) {
+          buffer[up] = fillCol;
+          stack.push(up);
         }
       }
     }

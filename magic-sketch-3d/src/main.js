@@ -167,8 +167,13 @@ function setupAppEvents() {
 
   // ペン太さ変更
   const brushSlider = document.getElementById('brush-size');
+  const brushIndicator = document.getElementById('brush-size-indicator');
   brushSlider.addEventListener('input', (e) => {
-    state.paintCanvas.setBrushSize(parseInt(e.target.value, 10));
+    const size = parseInt(e.target.value, 10);
+    state.paintCanvas.setBrushSize(size);
+    if (brushIndicator) {
+      brushIndicator.textContent = size;
+    }
   });
 
   // もどす (Undo)
@@ -402,9 +407,22 @@ async function loadGallery() {
     if (chars.length === 0) {
       grid.innerHTML = `
         <div class="empty-gallery-msg">
+          <div style="font-size: 2.8rem; margin-bottom: 0.5rem;">📦</div>
           まだおもちゃがないよ。<br>
           えをかいて、3Dにしてみてね！🎨
+          <div style="margin-top: 1.2rem;">
+            <button id="btn-empty-start-drawing" class="btn-giant btn-primary" style="font-size: 1.05rem; padding: 0.8rem 1.5rem; max-width: 240px; margin: 0 auto;">
+              🎨 おえかきする
+            </button>
+          </div>
         </div>`;
+      const emptyBtn = document.getElementById('btn-empty-start-drawing');
+      if (emptyBtn) {
+        emptyBtn.addEventListener('click', () => {
+          audioManager.playTap();
+          navigateTo('screen-canvas');
+        });
+      }
       return;
     }
     
@@ -513,15 +531,19 @@ async function setupARScreenFromGallery(charRecord) {
   try {
     const mesh = await reconstructMeshFromGLB(charRecord.modelData, charRecord.image2d);
     
-    // 現在のキャンバスもお絵かき復元（共有のハッシュ生成用）
+    // 現在のキャンバスもお絵かき復元（共有のハッシュ生成用、確実に非同期待機）
     const canvas = document.getElementById('paint-canvas');
     const ctx = canvas.getContext('2d');
-    const img = new Image();
-    img.onload = () => {
-      ctx.clearRect(0,0,512,512);
-      ctx.drawImage(img, 0, 0);
-    };
-    img.src = charRecord.image2d;
+    await new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, 512, 512);
+        ctx.drawImage(img, 0, 0);
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = charRecord.image2d;
+    });
 
     setupARScreen(mesh, charRecord.name);
   } catch (err) {

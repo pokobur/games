@@ -110,26 +110,32 @@ export const ModelGenerator = {
           return;
         }
 
-        // 4. グループ全体のセンター調整 (バウンディングボックスを求めてオフセット移動)
+        // 4. グループ全体のセンタリング & 接地調整 (足元をY=0にしてAR空間で床に接地させる)
         const box = new THREE.Box3().setFromObject(group);
         const center = new THREE.Vector3();
         box.getCenter(center);
         
-        // すべてのパーツをグループ中心に移動
+        // X, Zは中心に合わせ、Yは最下面 (box.min.y) を0に合わせる
         group.children.forEach(child => {
-          child.position.sub(center);
+          child.position.x -= center.x;
+          child.position.y -= box.min.y;
+          child.position.z -= center.z;
         });
 
         // 5. グループ全体のスケール調整 (約25cmになるように)
         const size = new THREE.Vector3();
         box.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 0.25 / maxDim; // 最大辺が25cm
+        const scale = 0.25 / (maxDim || 1); // 最大辺が25cm
         group.scale.set(scale, scale, scale);
 
-        // ダミープロパティ (castShadow等をグループ全体の認識用に)
-        group.castShadow = true;
-        group.receiveShadow = true;
+        // キャラクタモデルであることをマーク（画面離脱時の意図しないジオメトリ破棄を防止）
+        group.userData.isCharacterModel = true;
+        group.traverse(child => {
+          child.userData.isCharacterModel = true;
+          child.castShadow = true;
+          child.receiveShadow = true;
+        });
 
         resolve(group);
       } catch (err) {

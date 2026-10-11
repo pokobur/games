@@ -387,15 +387,26 @@ export class ARSummoner {
         return;
       }
 
-      // モバイル用の高反応タップ召喚検知
-      if (!this.isPlaced && this.isSingleTouch) {
+      // キャラクター配置後のタップ判定（キャラクターを突くと喜ぶリアクション機能）
+      if (this.isPlaced && this.isSingleTouch) {
         const touchDuration = Date.now() - this.touchStartTime;
         const endTouch = e.changedTouches ? e.changedTouches[0] : null;
         if (endTouch && touchDuration < 300) {
           const dx = endTouch.clientX - this.touchStartPos.x;
           const dy = endTouch.clientY - this.touchStartPos.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          // 移動距離が15px未満なら純粋なタップとみなして召喚
+          if (dist < 15) {
+            this.handleTapAt(endTouch.clientX, endTouch.clientY);
+          }
+        }
+      } else if (!this.isPlaced && this.isSingleTouch) {
+        // 未配置時は召喚
+        const touchDuration = Date.now() - this.touchStartTime;
+        const endTouch = e.changedTouches ? e.changedTouches[0] : null;
+        if (endTouch && touchDuration < 300) {
+          const dx = endTouch.clientX - this.touchStartPos.x;
+          const dy = endTouch.clientY - this.touchStartPos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 15) {
             this.summonCharacter();
           }
@@ -420,6 +431,9 @@ export class ARSummoner {
         this.summonCharacter();
         return;
       }
+
+      // クリックによるキャラクタータップ判定
+      this.handleTapAt(e.clientX, e.clientY);
 
       const currentTime = new Date().getTime();
       const tapLength = currentTime - lastTap;
@@ -651,6 +665,90 @@ export class ARSummoner {
     }
   }
 
+  handleTapAt(clientX, clientY) {
+    if (!this.summonedObject || !this.isPlaced || !this.camera) return;
+    
+    const rect = this.container.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    
+    this.raycaster.setFromCamera(mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.summonedObject.children, true);
+    
+    if (intersects.length > 0) {
+      // キャラクターがタップされた！
+      this.triggerJoyReaction();
+    }
+  }
+
+  // キャラクターのタップ時リアクション（ピョンと跳ねて星やハートを散らす）
+  triggerJoyReaction() {
+    if (!this.summonedObject) return;
+    
+    audioManager.playSuccess();
+    
+    // パーティクル発生
+    const pos = this.summonedObject.position;
+    this.createJoyParticles(pos.x, pos.y + 0.15, pos.z);
+    
+    // ぷにぷに跳ねるアクション
+    const origY = this.summonedObject.position.y;
+    const origScale = this.summonedObject.scale.y;
+    let step = 0;
+    
+    const hopAnimation = () => {
+      step += 0.15;
+      if (step <= Math.PI) {
+        const jumpOffset = Math.sin(step) * 0.15;
+        this.summonedObject.position.y = origY + jumpOffset;
+        const stretch = Math.sin(step) * 0.2;
+        this.summonedObject.scale.y = origScale * (1 + stretch);
+        this.summonedObject.scale.x = origScale * (1 - stretch * 0.5);
+        this.summonedObject.scale.z = origScale * (1 - stretch * 0.5);
+        requestAnimationFrame(hopAnimation);
+      } else {
+        this.summonedObject.position.y = origY;
+        this.summonedObject.scale.set(origScale, origScale, origScale);
+      }
+    };
+    hopAnimation();
+  }
+
+  // タップ時の星・光の喜びパーティクル
+  createJoyParticles(x, y, z) {
+    if (!this.scene) return;
+    const particleCount = 22;
+    const geometry = new THREE.SphereGeometry(0.016, 5, 5);
+    const colors = ['#ff5c8a', '#ff7675', '#ffeaa7', '#55efc4', '#ffffff'];
+    
+    for (let i = 0; i < particleCount; i++) {
+      const material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(colors[i % colors.length]),
+        transparent: true,
+        opacity: 1
+      });
+      const p = new THREE.Mesh(geometry, material);
+      p.position.set(x + (Math.random() - 0.5) * 0.12, y, z + (Math.random() - 0.5) * 0.12);
+      
+      const speed = 0.02 + Math.random() * 0.035;
+      const angle = Math.random() * Math.PI * 2;
+      const pitch = (0.2 + Math.random() * 0.8) * Math.PI * 0.5;
+      
+      p.userData = {
+        vx: speed * Math.cos(angle) * Math.cos(pitch),
+        vy: speed * Math.sin(pitch),
+        vz: speed * Math.sin(angle) * Math.cos(pitch),
+        life: 1.0,
+        decay: 0.025 + Math.random() * 0.02
+      };
+      
+      this.scene.add(p);
+      this.particles.push(p);
+    }
+  }
+
   // 再帰的オブジェクト破棄メソッド
   disposeObject(obj) {
     if (!obj) return;
@@ -658,6 +756,11 @@ export class ARSummoner {
     while (obj.children && obj.children.length > 0) {
       this.disposeObject(obj.children[0]);
       obj.remove(obj.children[0]);
+    }
+
+    // ユーザー作成のキャラクターモデルは外部参照と共有されるため破棄しない
+    if (obj.userData && obj.userData.isCharacterModel) {
+      return;
     }
 
     if (obj.geometry) {

@@ -132,30 +132,6 @@ body {
 .deco-gal-star { bottom: 12%; right: 4%; }
 
 
-/* ==================== SOUND TOGGLE ==================== */
-.sound-toggle-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 100;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: none;
-  background: var(--color-light);
-  box-shadow: 0 4px 0 #d2c8d9, var(--clay-shadow);
-  font-size: 1.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.1s;
-}
-
-.sound-toggle-btn:active {
-  transform: translateY(4px);
-  box-shadow: 0 0px 0 #d2c8d9, var(--clay-shadow);
-}
 
 
 /* ==================== SPA SCREEN TRANSITIONS ==================== */
@@ -507,6 +483,18 @@ body {
   transform: scale(1.25);
 }
 
+.brush-size-badge {
+  background: var(--color-secondary);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  min-width: 26px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(78, 205, 196, 0.3);
+}
+
 .utility-group {
   display: flex;
   gap: 0.4rem;
@@ -675,6 +663,23 @@ body {
   padding: 0.2rem 1.2rem;
   border-radius: 12px;
   box-shadow: var(--clay-shadow);
+}
+
+.viewer-hint-pill {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-dark);
+  font-weight: 900;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.9rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(74, 59, 82, 0.1);
+  pointer-events: none;
+  border: 1px solid #f1f2f6;
+  white-space: nowrap;
 }
 
 /* おなまえ入力ボックス */

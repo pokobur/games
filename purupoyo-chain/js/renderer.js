@@ -9,6 +9,7 @@ function setupRetinaCanvas(cvs, context) {
     dpr = window.devicePixelRatio || 1;
     cvs.width = Math.floor(LOGICAL_WIDTH * dpr);
     cvs.height = Math.floor(LOGICAL_HEIGHT * dpr);
+    cvs.setAttribute('data-pixel-ratio', '1');
     context.resetTransform?.();
     context.scale(dpr, dpr);
 }

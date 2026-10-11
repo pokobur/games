@@ -14,25 +14,27 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 setupRetinaCanvas(canvas, ctx);
 
-// Setup Matter.js Mouse Constraint
+// Setup Matter.js Mouse Constraint with direct 1:1 stiffness
+canvas.setAttribute('data-pixel-ratio', '1');
 const mouse = Mouse.create(canvas);
 const mouseConstraint = MouseConstraint.create(engine, {
     mouse: mouse,
     constraint: {
-        stiffness: 0.15,
-        damping: 0.1,
+        stiffness: 0.99,
+        damping: 0.05,
         render: { visible: false }
     }
 });
 World.add(world, mouseConstraint);
 
-// High-precision pointer scale compensation for mobile / responsive scaling (Bug #1 Fix!)
+// High-precision pointer scale compensation for mobile / responsive scaling (Bug Fixed!)
+// Maps screen touch directly to logical board coordinates by canceling canvas internal pixel buffer scaling
 function updatePointerScale() {
     const rect = canvas.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
+    if (rect.width > 0 && rect.height > 0 && canvas.width > 0 && canvas.height > 0) {
         Mouse.setScale(mouse, {
-            x: LOGICAL_WIDTH / rect.width,
-            y: LOGICAL_HEIGHT / rect.height
+            x: LOGICAL_WIDTH / canvas.width,
+            y: LOGICAL_HEIGHT / canvas.height
         });
         Mouse.setOffset(mouse, { x: 0, y: 0 });
     }
@@ -43,6 +45,13 @@ window.addEventListener('resize', () => {
 });
 window.addEventListener('scroll', updatePointerScale);
 updatePointerScale();
+
+// Prevent mobile gestures/scrolling during canvas touch
+canvas.addEventListener('touchmove', function(e) {
+    if (e.cancelable) {
+        e.preventDefault();
+    }
+}, { passive: false });
 
 // Game State Variables
 let gameState = STATE_TITLE;
@@ -629,6 +638,16 @@ Matter.Events.on(mouseConstraint, 'startdrag', function(event) {
         draggedCol = body.column;
         draggedRow = body.row;
 
+        // Instantly lock block center to touch point within board bounds
+        const minX = 20 + blockRadius + 4;
+        const maxX = 430 - blockRadius - 4;
+        const minY = startYThreshold + blockRadius + 4;
+        const maxY = 680 - blockRadius - 4;
+        const targetX = Math.max(minX, Math.min(maxX, mouse.position.x));
+        const targetY = Math.max(minY, Math.min(maxY, mouse.position.y));
+        Matter.Body.setPosition(draggedBody, { x: targetX, y: targetY });
+        Matter.Body.setVelocity(draggedBody, { x: 0, y: 0 });
+
         if (gameState === STATE_IDLE) {
             gameState = STATE_DRAGGING;
             synth.playGrab();
@@ -706,13 +725,25 @@ function gameLoop() {
         // Dragged block cardinal grid path swap resolver
         if (gameState === STATE_DRAGGING && draggedBody) {
             updatePointerScale();
-            let mCol = Math.floor((mouse.position.x - 20) / CELL_WIDTH);
-            let mRow = Math.floor((mouse.position.y - startYThreshold) / CELL_HEIGHT);
+
+            // Direct 1:1 position lock under touch point (Pad style precision!)
+            const minX = 20 + blockRadius + 4;
+            const maxX = 430 - blockRadius - 4;
+            const minY = startYThreshold + blockRadius + 4;
+            const maxY = 680 - blockRadius - 4;
+            const targetX = Math.max(minX, Math.min(maxX, mouse.position.x));
+            const targetY = Math.max(minY, Math.min(maxY, mouse.position.y));
+
+            Matter.Body.setPosition(draggedBody, { x: targetX, y: targetY });
+            Matter.Body.setVelocity(draggedBody, { x: 0, y: 0 });
+
+            let mCol = Math.floor((targetX - 20) / CELL_WIDTH);
+            let mRow = Math.floor((targetY - startYThreshold) / CELL_HEIGHT);
             mCol = Math.max(0, Math.min(COLS - 1, mCol));
             mRow = Math.max(0, Math.min(ROWS - 1, mRow));
 
             // Spawn glowing drag sparkle trail
-            spawnSparkleTrail(draggedBody.position.x, draggedBody.position.y, draggedBody.colorInfo);
+            spawnSparkleTrail(targetX, targetY, draggedBody.colorInfo);
 
             while (mCol !== draggedCol || mRow !== draggedRow) {
                 const prevCol = draggedCol;
@@ -747,16 +778,6 @@ function gameLoop() {
             }
             draggedBody.column = draggedCol;
             draggedBody.row = draggedRow;
-
-            // Strict board boundary clamp for dragged body
-            const minX = 20 + blockRadius + 4;
-            const maxX = 430 - blockRadius - 4;
-            const minY = startYThreshold + blockRadius + 4;
-            const maxY = 680 - blockRadius - 4;
-            Matter.Body.setPosition(draggedBody, {
-                x: Math.max(minX, Math.min(maxX, draggedBody.position.x)),
-                y: Math.max(minY, Math.min(maxY, draggedBody.position.y))
-            });
         }
 
         // Wobble spring physics & target position interpolation

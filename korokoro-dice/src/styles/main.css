@@ -30,6 +30,7 @@
    ======================================== */
 * {
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
 html, body {
@@ -167,10 +168,11 @@ body {
   flex-direction: column;
   height: 100%;
   height: 100dvh;
-  padding: 12px;
+  padding: 10px;
   gap: 8px;
   opacity: 0;
   animation: fade-in 0.5s ease-out 0.3s forwards;
+  overflow: hidden;
 }
 
 @keyframes fade-in {
@@ -183,8 +185,8 @@ body {
 .scoreboard {
   flex-shrink: 0;
   text-align: center;
-  padding: 12px 16px;
-  background: rgba(255,255,255,0.7);
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.78);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-radius: 20px;
@@ -195,7 +197,7 @@ body {
   font-size: clamp(1.4rem, 5vw, 2.2rem);
   font-weight: 900;
   color: #3D3D3D;
-  min-height: 1.6em;
+  min-height: 1.5em;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -214,8 +216,9 @@ body {
 
 .scoreboard-label {
   font-size: clamp(0.8rem, 2.5vw, 1rem);
-  color: #999;
+  color: #888;
   margin-top: 2px;
+  font-weight: 700;
 }
 
 /* ========================================
@@ -226,24 +229,59 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(12px, 4vw, 32px);
+  gap: clamp(10px, 4vw, 28px);
   flex-wrap: wrap;
   min-height: 0;
-  padding: 8px;
+  padding: 4px;
 }
 
 /* ========================================
-   3D サイコロ
+   サイコロラッパー & バッジ
    ======================================== */
-.dice-scene {
-  perspective: 600px;
-  width: clamp(80px, 22vw, 130px);
-  height: clamp(80px, 22vw, 130px);
-  cursor: pointer;
-  -webkit-user-select: none;
+.dice-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   user-select: none;
+  -webkit-user-select: none;
 }
 
+.dice-type-badge {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  z-index: 10;
+  background: linear-gradient(135deg, var(--color-candy-purple), var(--color-candy-pink));
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px rgba(155, 89, 182, 0.4);
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  animation: badge-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badge-pop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+.dice-scene {
+  perspective: 600px;
+  width: clamp(80px, 22vw, 125px);
+  height: clamp(80px, 22vw, 125px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========================================
+   3D 立方体サイコロ (D6)
+   ======================================== */
 .dice-cube {
   width: 100%;
   height: 100%;
@@ -280,7 +318,7 @@ body {
 }
 
 .dice-face-content {
-  font-size: clamp(2rem, 8vw, 3.5rem);
+  font-size: clamp(2rem, 8vw, 3.4rem);
   line-height: 1;
   pointer-events: none;
 }
@@ -293,18 +331,107 @@ body {
 }
 
 /* 6面の配置 */
-.dice-face--1 { transform: rotateY(0deg)    translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
-.dice-face--2 { transform: rotateY(180deg)  translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
-.dice-face--3 { transform: rotateY(90deg)   translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
-.dice-face--4 { transform: rotateY(-90deg)  translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
-.dice-face--5 { transform: rotateX(90deg)   translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
-.dice-face--6 { transform: rotateX(-90deg)  translateZ(calc(clamp(80px, 22vw, 130px) / 2)); }
+.dice-face--1 { transform: rotateY(0deg)    translateZ(calc(clamp(80px, 22vw, 125px) / 2)); }
+.dice-face--2 { transform: rotateY(180deg)  translateZ(calc(clamp(80px, 22vw, 125px) / 2)); }
+.dice-face--3 { transform: rotateY(-90deg)  translateZ(calc(clamp(80px, 22vw, 125px) / 2)); }
+.dice-face--4 { transform: rotateY(90deg)   translateZ(calc(clamp(80px, 22vw, 125px) / 2)); }
+.dice-face--5 { transform: rotateX(-90deg)  translateZ(calc(clamp(80px, 22vw, 125px) / 2)); }
+.dice-face--6 { transform: rotateX(90deg)   translateZ(calc(clamp(80px, 22vw, 125px) / 2)); }
 
-/* サイコロの地面の影 */
+/* ========================================
+   多面体サイコロ (D4, D8, D10, D12, D20)
+   ======================================== */
+.dice-poly {
+  width: 90%;
+  height: 90%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.dice-poly.rolling {
+  animation: poly-roll 0.16s linear infinite;
+}
+
+@keyframes poly-roll {
+  0% { transform: rotate(0deg) scale(0.95); }
+  25% { transform: rotate(90deg) scale(1.05) skew(5deg); }
+  50% { transform: rotate(180deg) scale(0.92); }
+  75% { transform: rotate(270deg) scale(1.04) skew(-5deg); }
+  100% { transform: rotate(360deg) scale(0.95); }
+}
+
+/* D4: 三角形 */
+.dice-poly--d4 {
+  clip-path: polygon(50% 6%, 95% 92%, 5% 92%);
+  background: linear-gradient(135deg, #ffffff 0%, #fff0f5 50%, #fed7e2 100%);
+  border-bottom: 4px solid rgba(255, 107, 157, 0.3);
+}
+
+/* D8: ダイヤモンド / 菱形 */
+.dice-poly--d8 {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 50%, #bae6fd 100%);
+}
+
+/* D10: ペンタゴンダイヤ */
+.dice-poly--d10 {
+  clip-path: polygon(50% 0%, 98% 36%, 80% 98%, 20% 98%, 2% 36%);
+  background: linear-gradient(135deg, #ffffff 0%, #fef3c7 50%, #fde68a 100%);
+}
+
+/* D12: 正五角形ベース */
+.dice-poly--d12 {
+  clip-path: polygon(50% 0%, 98% 38%, 81% 100%, 19% 100%, 2% 38%);
+  background: linear-gradient(135deg, #ffffff 0%, #dcfce7 50%, #bbf7d0 100%);
+}
+
+/* D20: 二十面体・六角形ファセット */
+.dice-poly--d20 {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  background: linear-gradient(135deg, #ffffff 0%, #f3e8ff 50%, #e9d5ff 100%);
+}
+
+.dice-poly-facets {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.dice-poly-value {
+  font-size: clamp(2.2rem, 8vw, 3.6rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--color-candy-purple), var(--color-candy-blue));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  text-align: center;
+  pointer-events: none;
+}
+
+.dice-poly-value.pop-value {
+  animation: poly-value-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes poly-value-pop {
+  0% { transform: scale(0.4); opacity: 0.3; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 影 */
 .dice-shadow {
   width: 70%;
   height: 12px;
-  margin: 8px auto 0;
+  margin: 6px auto 0;
   background: radial-gradient(ellipse, rgba(0,0,0,0.12) 0%, transparent 70%);
   border-radius: 50%;
   transition: transform 0.3s, opacity 0.3s;
@@ -319,7 +446,7 @@ body {
   100% { transform: scaleX(1.2); opacity: 0.8; }
 }
 
-/* サイコロ登場アニメーション */
+/* アニメーション */
 .dice-enter {
   animation: dice-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
@@ -344,7 +471,7 @@ body {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 0 4px;
 }
 
@@ -355,40 +482,79 @@ body {
   gap: 8px;
 }
 
+.control-utility-row {
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.book-open-btn {
+  font-family: var(--font-family-rounded);
+  font-size: clamp(0.78rem, 2.4vw, 0.92rem);
+  font-weight: 900;
+  color: #7a4100;
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 2px solid #fdba74;
+  border-radius: 14px;
+  padding: 6px 14px;
+  min-height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 0 #ea580c33;
+  transition: all 0.12s ease;
+}
+
+.book-open-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #ea580c33;
+}
+
 .control-label {
-  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+  font-size: clamp(0.72rem, 2.3vw, 0.85rem);
   font-weight: 700;
   color: #888;
   white-space: nowrap;
-  min-width: 5em;
+  min-width: 4.8em;
   text-align: right;
 }
 
 .control-options {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .control-btn {
   font-family: var(--font-family-rounded);
-  font-size: clamp(0.85rem, 2.8vw, 1rem);
+  font-size: clamp(0.8rem, 2.6vw, 0.95rem);
   font-weight: 700;
   color: #666;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.85);
   border: 2px solid transparent;
   border-radius: 14px;
-  padding: 8px 16px;
-  min-height: 44px;
-  min-width: 44px;
+  padding: 6px 12px;
+  min-height: 40px;
+  min-width: 40px;
   cursor: pointer;
   box-shadow: 0 3px 0 rgba(0,0,0,0.08);
   transform: translateY(0);
   transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
-.control-btn:active {
+.control-btn:active:not(:disabled) {
   transform: translateY(2px);
   box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+}
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .control-btn.active {
@@ -398,16 +564,34 @@ body {
   box-shadow: 0 3px 0 rgba(77,150,255,0.3);
 }
 
+/* 多面体ボタン専用 */
+.poly-options .poly-btn {
+  padding: 4px 8px;
+  min-height: 38px;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.1;
+}
+
+.poly-options .poly-btn strong {
+  font-size: 0.82rem;
+}
+
+.poly-options .poly-btn small {
+  font-size: 0.65rem;
+  opacity: 0.85;
+}
+
 .sensor-btn {
   font-family: var(--font-family-rounded);
-  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+  font-size: clamp(0.7rem, 2.2vw, 0.82rem);
   font-weight: 700;
   color: var(--color-candy-green);
   background: rgba(107,203,119,0.12);
   border: 2px dashed var(--color-candy-green);
   border-radius: 14px;
-  padding: 8px 14px;
-  min-height: 44px;
+  padding: 6px 12px;
+  min-height: 40px;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -429,7 +613,7 @@ body {
   flex-shrink: 0;
   display: flex;
   justify-content: center;
-  padding: 8px 16px 16px;
+  padding: 6px 14px 12px;
 }
 
 .roll-btn {
@@ -442,8 +626,8 @@ body {
   background: linear-gradient(135deg, var(--color-btn-roll-start), var(--color-btn-roll-end));
   border: none;
   border-radius: 22px;
-  padding: 18px 32px;
-  min-height: 64px;
+  padding: 16px 32px;
+  min-height: 62px;
   cursor: pointer;
   box-shadow: 0 6px 0 var(--color-btn-roll-shadow), 0 8px 24px rgba(255,107,157,0.25);
   transform: translateY(0);
@@ -489,98 +673,6 @@ body {
 }
 
 /* ========================================
-   ぞろ目演出オーバーレイ
-   ======================================== */
-.celebration-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.3);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  animation: celebration-in 0.3s ease-out;
-  pointer-events: auto;
-}
-
-@keyframes celebration-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.celebration-card {
-  background: white;
-  border-radius: 28px;
-  padding: 32px 40px;
-  text-align: center;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.15);
-  animation: celebration-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  max-width: 85vw;
-}
-
-@keyframes celebration-pop {
-  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-
-.celebration-emoji {
-  font-size: clamp(3rem, 12vw, 5rem);
-  animation: celebration-shake 0.5s ease-in-out infinite alternate;
-}
-
-@keyframes celebration-shake {
-  0% { transform: rotate(-5deg) scale(1); }
-  100% { transform: rotate(5deg) scale(1.05); }
-}
-
-.celebration-title {
-  font-size: clamp(1.5rem, 6vw, 2.5rem);
-  font-weight: 900;
-  background: linear-gradient(135deg, var(--color-candy-pink), var(--color-candy-orange), var(--color-candy-yellow));
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 12px 0 8px;
-}
-
-.celebration-sub {
-  font-size: clamp(0.9rem, 3vw, 1.2rem);
-  color: #888;
-  margin-bottom: 16px;
-}
-
-.celebration-dismiss {
-  font-family: var(--font-family-rounded);
-  font-size: clamp(1rem, 3vw, 1.2rem);
-  font-weight: 700;
-  color: white;
-  background: linear-gradient(135deg, var(--color-candy-blue), var(--color-candy-purple));
-  border: none;
-  border-radius: 16px;
-  padding: 12px 32px;
-  min-height: 48px;
-  cursor: pointer;
-  box-shadow: 0 4px 0 rgba(77,60,180,0.3);
-  transform: translateY(0);
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.celebration-dismiss:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 rgba(77,60,180,0.3);
-}
-
-.celebration-exit {
-  animation: celebration-exit 0.3s ease-in forwards;
-}
-
-@keyframes celebration-exit {
-  to { opacity: 0; transform: scale(0.95); pointer-events: none; }
-}
-
-/* ========================================
    ロール履歴
    ======================================== */
 .roll-history {
@@ -617,10 +709,10 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.85);
   border-radius: 10px;
-  padding: 4px 10px;
-  font-size: clamp(0.75rem, 2.5vw, 0.9rem);
+  padding: 3px 8px;
+  font-size: clamp(0.75rem, 2.5vw, 0.88rem);
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
@@ -631,6 +723,15 @@ body {
 @keyframes history-card-enter {
   from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+.roll-history-badge {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: var(--color-candy-purple);
+  background: rgba(155, 89, 182, 0.12);
+  padding: 1px 4px;
+  border-radius: 4px;
 }
 
 .roll-history-faces {
@@ -644,7 +745,7 @@ body {
 }
 
 .roll-history-empty {
-  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+  font-size: clamp(0.7rem, 2.2vw, 0.82rem);
   color: #ccc;
   white-space: nowrap;
 }
@@ -654,26 +755,27 @@ body {
    ======================================== */
 .target-game {
   flex-shrink: 0;
-  background: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.8);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-radius: 20px;
-  padding: 14px 18px;
+  border-radius: 18px;
+  padding: 12px 16px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  border: 2px solid rgba(255,154,86,0.2);
+  gap: 8px;
+  border: 2px solid rgba(255,154,86,0.25);
 }
 
 .target-game-header {
   display: flex;
   align-items: center;
   gap: 10px;
+  justify-content: space-between;
 }
 
 .target-game-label {
-  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  font-size: clamp(0.8rem, 2.5vw, 0.95rem);
   font-weight: 900;
   color: var(--color-candy-orange);
   white-space: nowrap;
@@ -685,14 +787,14 @@ body {
 }
 
 .target-game-targets .control-btn {
-  padding: 6px 14px;
-  min-height: 36px;
-  font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+  padding: 4px 10px;
+  min-height: 32px;
+  font-size: clamp(0.75rem, 2.4vw, 0.88rem);
 }
 
 .target-game-bar {
   width: 100%;
-  height: 20px;
+  height: 18px;
   background: rgba(0,0,0,0.06);
   border-radius: 10px;
   overflow: hidden;
@@ -705,14 +807,6 @@ body {
   border-radius: 10px;
   transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
-}
-
-.target-game-fill::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent);
-  border-radius: inherit;
 }
 
 .target-game-fill.exact {
@@ -734,44 +828,408 @@ body {
 }
 
 .target-game-total {
-  font-size: clamp(1.3rem, 4.5vw, 1.8rem);
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
   font-weight: 900;
   color: #3D3D3D;
 }
 
 .target-game-message {
-  font-size: clamp(0.85rem, 2.8vw, 1.05rem);
+  font-size: clamp(0.82rem, 2.6vw, 0.98rem);
   font-weight: 700;
   color: var(--color-candy-orange);
   margin-top: 2px;
 }
 
 .target-game-rollcount {
-  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
+  font-size: clamp(0.68rem, 2.2vw, 0.82rem);
   color: #aaa;
   margin-top: 2px;
 }
 
 .target-game-reset {
   font-family: var(--font-family-rounded);
-  font-size: clamp(0.9rem, 3vw, 1.1rem);
+  font-size: clamp(0.85rem, 2.8vw, 1.05rem);
   font-weight: 700;
   color: white;
   background: linear-gradient(135deg, var(--color-candy-blue), var(--color-candy-purple));
   border: none;
   border-radius: 14px;
-  padding: 10px 24px;
-  min-height: 44px;
+  padding: 8px 20px;
+  min-height: 40px;
   cursor: pointer;
   box-shadow: 0 3px 0 rgba(77,60,180,0.3);
-  transform: translateY(0);
+  align-self: center;
   transition: transform 0.1s, box-shadow 0.1s;
-  animation: celebration-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .target-game-reset:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 rgba(77,60,180,0.3);
+}
+
+/* ========================================
+   ぞろ目演出オーバーレイ
+   ======================================== */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: celebration-in 0.3s ease-out;
+}
+
+@keyframes celebration-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.celebration-card {
+  background: white;
+  border-radius: 28px;
+  padding: 30px 36px;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+  animation: celebration-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 85vw;
+}
+
+@keyframes celebration-pop {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.celebration-emoji {
+  font-size: clamp(2.8rem, 10vw, 4.5rem);
+  animation: celebration-shake 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes celebration-shake {
+  0% { transform: rotate(-5deg) scale(1); }
+  100% { transform: rotate(5deg) scale(1.05); }
+}
+
+.celebration-title {
+  font-size: clamp(1.5rem, 5.5vw, 2.3rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--color-candy-pink), var(--color-candy-orange), var(--color-candy-yellow));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 10px 0 6px;
+}
+
+.celebration-sub {
+  font-size: clamp(0.85rem, 2.8vw, 1.1rem);
+  color: #777;
+  margin-bottom: 16px;
+}
+
+.celebration-dismiss {
+  font-family: var(--font-family-rounded);
+  font-size: clamp(0.95rem, 2.8vw, 1.15rem);
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--color-candy-blue), var(--color-candy-purple));
+  border: none;
+  border-radius: 16px;
+  padding: 10px 28px;
+  min-height: 46px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(77,60,180,0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.celebration-dismiss:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(77,60,180,0.3);
+}
+
+.celebration-exit {
+  animation: celebration-exit 0.3s ease-in forwards;
+}
+
+@keyframes celebration-exit {
+  to { opacity: 0; transform: scale(0.95); pointer-events: none; }
+}
+
+/* ========================================
+   サイコロずかん（なかみ一覧）モーダル
+   ======================================== */
+.dice-book-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 14px;
+}
+
+.dice-book-modal {
+  background: #ffffff;
+  border-radius: 26px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: book-modal-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dice-book-modal.modal-exit {
+  animation: book-modal-exit 0.25s ease-in forwards;
+}
+
+@keyframes book-modal-enter {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes book-modal-exit {
+  to { transform: scale(0.9); opacity: 0; }
+}
+
+.dice-book-header {
+  padding: 16px 20px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.dice-book-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  font-weight: 900;
+  color: #333;
+}
+
+.dice-book-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: #888;
+  font-weight: 700;
+}
+
+.dice-book-close-btn {
+  background: #f3f4f6;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #666;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.dice-book-close-btn:hover {
+  background: #e5e7eb;
+  color: #111;
+}
+
+/* テーマタブ */
+.dice-book-theme-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid #f3f4f6;
+  scrollbar-width: none;
+}
+
+.dice-book-theme-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.dice-book-theme-tab {
+  font-family: var(--font-family-rounded);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #555;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 6px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+
+.dice-book-theme-tab.active {
+  background: linear-gradient(135deg, var(--color-candy-pink), var(--color-candy-orange));
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.35);
+}
+
+/* 多面体セレクター */
+.dice-book-poly-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #fffbeb;
+  border-bottom: 1px solid #fef3c7;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dice-book-poly-btn {
+  font-family: var(--font-family-rounded);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #78350f;
+  background: white;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 4px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dice-book-poly-btn.active {
+  background: #f59e0b;
+  color: white;
+  border-color: #d97706;
+}
+
+/* 一覧エリア */
+.dice-book-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dice-book-summary-banner {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.dice-book-summary-banner .banner-badge {
+  font-size: 1.8rem;
+  min-width: 44px;
+  text-align: center;
+}
+
+.dice-book-summary-banner .banner-name {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #1e293b;
+}
+
+.dice-book-summary-banner .banner-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dice-book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.dice-book-card {
+  background: #ffffff;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.dice-book-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+}
+
+.dice-book-card-icon {
+  font-size: 2.2rem;
+  line-height: 1.1;
+}
+
+.dice-book-card-icon.is-number {
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--color-candy-purple), var(--color-candy-blue));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dice-book-card-label {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #334155;
+}
+
+.dice-book-card-desc {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* フッター */
+.dice-book-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: center;
+}
+
+.dice-book-use-btn {
+  font-family: var(--font-family-rounded);
+  width: 100%;
+  max-width: 320px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: white;
+  background: linear-gradient(135deg, var(--color-candy-pink), var(--color-candy-orange));
+  border: none;
+  border-radius: 18px;
+  padding: 12px 24px;
+  min-height: 52px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--color-btn-roll-shadow);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.dice-book-use-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--color-btn-roll-shadow);
 }
 
 /* ========================================
@@ -789,49 +1247,50 @@ body {
 @media (min-width: 1024px) {
   .main-app {
     max-width: 700px;
-    padding: 24px;
-    gap: 16px;
+    padding: 20px;
+    gap: 14px;
   }
 }
 
 /* ========================================
    ランドスケープ対応
    ======================================== */
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 520px) {
   .main-app {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    padding: 8px;
-    gap: 8px;
+    padding: 6px;
+    gap: 6px;
   }
 
   .scoreboard {
     order: 1;
     width: 100%;
-    padding: 6px 12px;
+    padding: 4px 10px;
   }
 
   .dice-area {
     order: 2;
     flex: 1;
-    min-width: 50%;
+    min-width: 48%;
   }
 
   .control-panel {
     order: 3;
     flex: 0 0 auto;
+    gap: 4px;
   }
 
   .roll-btn-wrapper {
     order: 4;
-    padding: 4px 8px;
+    padding: 2px 8px;
     flex: 0 0 auto;
   }
 
   .dice-scene {
-    width: clamp(60px, 15vw, 90px);
-    height: clamp(60px, 15vw, 90px);
+    width: clamp(60px, 15vw, 85px);
+    height: clamp(60px, 15vw, 85px);
   }
 }

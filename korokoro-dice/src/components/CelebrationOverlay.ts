@@ -1,4 +1,5 @@
 import confetti from 'canvas-confetti';
+import { triggerHaptic } from '../utils/helpers.ts';
 
 /**
  * CelebrationOverlay — ぞろ目・最大値獲得時の演出
@@ -9,6 +10,7 @@ export class CelebrationOverlay {
 
   /** ぞろ目演出を表示する */
   celebrateZorome(faceDisplay: string): void {
+    triggerHaptic('success');
     this.fireConfetti();
     this.showPopup({
       emoji: faceDisplay + faceDisplay + faceDisplay,
@@ -17,21 +19,21 @@ export class CelebrationOverlay {
     });
   }
 
-  /** 最大値演出を表示する (全部6) */
-  celebrateMax(diceCount: number): void {
+  /** 最大値演出を表示する (全部最大値) */
+  celebrateMax(diceCount: number, maxSide: number = 6): void {
+    triggerHaptic('success');
     this.fireConfetti();
     this.fireConfetti(); // 二重紙吹雪
-    const sixes = Array(diceCount).fill('6').join(' ');
+    const maxVals = Array(diceCount).fill(`${maxSide}`).join(' ');
     this.showPopup({
       emoji: '👑',
       title: 'さいこう！',
-      sub: `ぜんぶ 6！（${sixes}）ミラクル！✨`,
+      sub: `ぜんぶ ${maxSide}！（${maxVals}）ミラクル！✨`,
     });
   }
 
   /** 紙吹雪を発射する */
   private fireConfetti(): void {
-    // 左から
     confetti({
       particleCount: 60,
       angle: 60,
@@ -40,7 +42,6 @@ export class CelebrationOverlay {
       colors: ['#FF6B9D', '#FF9A56', '#FFD93D', '#6BCB77', '#4D96FF', '#9B59B6'],
       disableForReducedMotion: true,
     });
-    // 右から
     confetti({
       particleCount: 60,
       angle: 120,
@@ -53,7 +54,6 @@ export class CelebrationOverlay {
 
   /** ポップアップを表示する */
   private showPopup(opts: { emoji: string; title: string; sub: string }): void {
-    // 既存のオーバーレイがあれば削除
     this.dismiss();
 
     this.overlay = document.createElement('div');
@@ -70,9 +70,11 @@ export class CelebrationOverlay {
     document.body.appendChild(this.overlay);
 
     const dismissBtn = this.overlay.querySelector('#celebration-dismiss') as HTMLButtonElement;
-    dismissBtn.addEventListener('click', () => this.dismiss(), { once: true });
+    dismissBtn.addEventListener('click', () => {
+      triggerHaptic('tap');
+      this.dismiss();
+    }, { once: true });
 
-    // オーバーレイ背景タップでも閉じる
     this.overlay.addEventListener('click', (e) => {
       if (e.target === this.overlay) {
         this.dismiss();

@@ -1,9 +1,9 @@
-import { ThemeId, RollHistoryEntry } from '../types/index.ts';
-import { getFace } from '../data/themes.ts';
+import { DiceType, ThemeId, RollHistoryEntry } from '../types/index.ts';
+import { getFace, DICE_TYPES } from '../data/themes.ts';
 
 /**
  * RollHistory — 直近のロール結果を横スクロールで表示
- * 最新が左端、最大10件保持。
+ * 最新が左端、最大10件保持。多面体サイコロバッジにも対応。
  */
 export class RollHistory {
   private el: HTMLElement;
@@ -25,18 +25,17 @@ export class RollHistory {
     this.scrollContainer.className = 'roll-history-scroll';
     this.el.appendChild(this.scrollContainer);
 
-    // 初期メッセージ
     this.showEmpty();
-
     container.appendChild(this.el);
   }
 
   /** ロール結果を追加する */
-  addEntry(diceValues: number[], themeId: ThemeId, sum: number): void {
+  addEntry(diceValues: number[], themeId: ThemeId, sum: number, diceType: DiceType = 'd6'): void {
     this.entries.unshift({
       id: this.nextId++,
       diceValues,
       themeId,
+      diceType,
       sum,
     });
 
@@ -62,11 +61,19 @@ export class RollHistory {
       const card = document.createElement('div');
       card.className = 'roll-history-card roll-history-card-enter';
 
+      // 多面体バッジ（すうじテーマかつD6以外の場合）
+      if (entry.themeId === 'number' && entry.diceType !== 'd6') {
+        const badge = document.createElement('span');
+        badge.className = 'roll-history-badge';
+        badge.textContent = DICE_TYPES[entry.diceType]?.badge || '';
+        card.appendChild(badge);
+      }
+
       // サイコロの面を表示
       const facesEl = document.createElement('span');
       facesEl.className = 'roll-history-faces';
       const faceTexts = entry.diceValues.map(
-        (v) => getFace(entry.themeId, v).display
+        (v) => getFace(entry.themeId, v, entry.diceType).display
       );
       facesEl.textContent = faceTexts.join(' ');
       card.appendChild(facesEl);

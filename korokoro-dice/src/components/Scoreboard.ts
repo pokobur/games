@@ -37,9 +37,7 @@ export class Scoreboard {
 
   /** 結果を更新する */
   update(dice: DiceState[], themeId: ThemeId): void {
-    // バウンスアニメーション
     this.formulaEl.classList.remove('bounce');
-    // リフロー発火
     void this.formulaEl.offsetWidth;
     this.formulaEl.classList.add('bounce');
 
@@ -63,15 +61,15 @@ export class Scoreboard {
     }
   }
 
-  /** どうぶつ・いろテーマ: 個数カウント表示 */
+  /** どうぶつ・いろ・くだもの・のりものテーマ: 表示 */
   private updateTheme(dice: DiceState[], themeId: ThemeId): void {
     const theme = getTheme(themeId);
-    const labels = dice.map((d) => getFace(themeId, d.value).display);
+    const displays = dice.map((d) => getFace(themeId, d.value, d.diceType).display);
 
-    this.formulaEl.textContent = labels.join('  ');
+    this.formulaEl.textContent = displays.join('  ');
 
     if (dice.length === 1) {
-      const face = getFace(themeId, dice[0].value);
+      const face = getFace(themeId, dice[0].value, dice[0].diceType);
       this.labelEl.textContent = `${face.label} が でたよ！`;
     } else {
       this.labelEl.textContent = `${dice.length} ${theme.counter}の ${theme.noun}が でたよ！`;

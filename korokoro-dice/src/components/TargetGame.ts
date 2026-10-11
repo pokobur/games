@@ -1,12 +1,8 @@
-import { getNumberWord } from '../utils/helpers.ts';
-
-/** もくひょう値の選択肢 */
-const TARGET_OPTIONS = [10, 15, 20];
+import { getNumberWord, triggerHaptic } from '../utils/helpers.ts';
 
 /**
  * TargetGame — もくひょうゲームコンポーネント
- * 目標の数に合計を近づけるミニゲーム。
- * ぴったり → 祝福、こえちゃった → リセット促し。
+ * 多面体サイコロや個数に応じて動的に最適な目標値を提供。
  */
 export class TargetGame {
   private el: HTMLElement;
@@ -15,16 +11,16 @@ export class TargetGame {
   private messageText: HTMLElement;
   private rollCountText: HTMLElement;
   private resetBtn: HTMLButtonElement;
+  private targetsWrap: HTMLElement;
   private targetButtons: HTMLButtonElement[] = [];
 
+  private _targets = [10, 15, 20];
   private _target = 10;
   private _currentTotal = 0;
   private _rollCount = 0;
   private _isComplete = false;
 
-  /** ぴったり達成時のコールバック */
   public onExactHit: (() => void) | null = null;
-  /** リセット時のコールバック */
   public onReset: (() => void) | null = null;
 
   constructor(container: HTMLElement) {
@@ -41,23 +37,12 @@ export class TargetGame {
     label.textContent = '🎯 もくひょう';
     header.appendChild(label);
 
-    const targets = document.createElement('div');
-    targets.className = 'target-game-targets';
-    for (const t of TARGET_OPTIONS) {
-      const btn = document.createElement('button');
-      btn.className = `control-btn${t === this._target ? ' active' : ''}`;
-      btn.textContent = `${t}`;
-      btn.addEventListener('click', () => {
-        if (this._isComplete || this._rollCount > 0) return;
-        this._target = t;
-        this.updateTargetActive();
-        this.updateDisplay();
-      });
-      targets.appendChild(btn);
-      this.targetButtons.push(btn);
-    }
-    header.appendChild(targets);
+    this.targetsWrap = document.createElement('div');
+    this.targetsWrap.className = 'target-game-targets';
+    header.appendChild(this.targetsWrap);
     this.el.appendChild(header);
+
+    this.rebuildTargetButtons();
 
     // プログレスバー
     const barWrap = document.createElement('div');
@@ -91,6 +76,7 @@ export class TargetGame {
     this.resetBtn.textContent = '🔄 もういちど！';
     this.resetBtn.style.display = 'none';
     this.resetBtn.addEventListener('click', () => {
+      triggerHaptic('tap');
       this.reset();
       this.onReset?.();
     });
@@ -100,22 +86,34 @@ export class TargetGame {
     this.updateDisplay();
   }
 
-  /** 表示する */
+  /** サイコロの面数と個数に合わせて目標値を動的に調整 */
+  setDiceConfig(diceCount: number, sides: number): void {
+    const avgOneRoll = diceCount * ((sides + 1) / 2);
+    // 2回、3回、4回振ったあたりのキリの良い数値
+    const t1 = Math.max(5, Math.round((avgOneRoll * 1.8) / 5) * 5);
+    const t2 = Math.max(t1 + 5, Math.round((avgOneRoll * 2.8) / 5) * 5);
+    const t3 = Math.max(t2 + 5, Math.round((avgOneRoll * 4.0) / 5) * 5);
+
+    this._targets = [t1, t2, t3];
+    if (!this._targets.includes(this._target)) {
+      this._target = this._targets[0];
+    }
+    this.rebuildTargetButtons();
+    this.reset();
+  }
+
   show(): void {
     this.el.style.display = '';
   }
 
-  /** 非表示にする */
   hide(): void {
     this.el.style.display = 'none';
   }
 
-  /** ゲーム完了済みかどうか */
   get isComplete(): boolean {
     return this._isComplete;
   }
 
-  /** ロール結果を加算する */
   addRoll(sum: number): void {
     if (this._isComplete) return;
     this._currentTotal += sum;
@@ -124,7 +122,6 @@ export class TargetGame {
     this.checkCompletion();
   }
 
-  /** ゲームをリセットする */
   reset(): void {
     this._currentTotal = 0;
     this._rollCount = 0;
@@ -132,13 +129,31 @@ export class TargetGame {
     this.resetBtn.style.display = 'none';
     this.barFill.classList.remove('exact', 'bust');
     this.updateDisplay();
-    // ロール中でなければ目標変更可能にする
     for (const btn of this.targetButtons) {
       btn.disabled = false;
     }
   }
 
-  /** 表示を更新する */
+  private rebuildTargetButtons(): void {
+    this.targetsWrap.innerHTML = '';
+    this.targetButtons = [];
+
+    for (const t of this._targets) {
+      const btn = document.createElement('button');
+      btn.className = `control-btn${t === this._target ? ' active' : ''}`;
+      btn.textContent = `${t}`;
+      btn.addEventListener('click', () => {
+        if (this._isComplete || this._rollCount > 0) return;
+        triggerHaptic('tap');
+        this._target = t;
+        this.updateTargetActive();
+        this.updateDisplay();
+      });
+      this.targetsWrap.appendChild(btn);
+      this.targetButtons.push(btn);
+    }
+  }
+
   private updateDisplay(): void {
     const pct = Math.min((this._currentTotal / this._target) * 100, 110);
     this.barFill.style.width = `${Math.min(pct, 100)}%`;
@@ -162,34 +177,32 @@ export class TargetGame {
     }
   }
 
-  /** 完了チェック */
   private checkCompletion(): void {
     if (this._currentTotal >= this._target) {
       this._isComplete = true;
       this.resetBtn.style.display = '';
-      // 目標変更を不可にする
       for (const btn of this.targetButtons) {
         btn.disabled = true;
       }
 
       if (this._currentTotal === this._target) {
         this.barFill.classList.add('exact');
+        triggerHaptic('success');
         this.onExactHit?.();
       } else {
         this.barFill.classList.add('bust');
+        triggerHaptic('bounce');
       }
     } else {
-      // ロール開始したら目標変更を不可にする
       for (const btn of this.targetButtons) {
         btn.disabled = true;
       }
     }
   }
 
-  /** 目標ボタンのアクティブ状態を更新する */
   private updateTargetActive(): void {
     this.targetButtons.forEach((btn, i) => {
-      btn.classList.toggle('active', TARGET_OPTIONS[i] === this._target);
+      btn.classList.toggle('active', this._targets[i] === this._target);
     });
   }
 

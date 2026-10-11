@@ -1,26 +1,31 @@
-import { DiceCount, DiceState, ThemeId } from '../types/index.ts';
+import { DiceCount, DiceState, DiceType, ThemeId } from '../types/index.ts';
 import { Dice } from './Dice.ts';
 
 /**
  * DiceContainer — 複数のサイコロを管理するコンテナ
- * 個数変更、一括ロール、全停止検知を担当する。
+ * 個数変更、多面体切り替え、一括ロール、全停止検知を担当する。
  */
 export class DiceContainer {
   private el: HTMLElement;
   private diceInstances: Dice[] = [];
   private _themeId: ThemeId;
+  private _diceType: DiceType;
   private _count: DiceCount;
   private pendingRolls = 0;
+
+  /** いずれかのサイコロが回転開始した時のコールバック (インターロック用) */
+  public onRollStart: ((id: number) => void) | null = null;
 
   /** 全サイコロの回転が完了した時のコールバック */
   public onAllComplete: ((dice: DiceState[]) => void) | null = null;
 
-  /** 個別サイコロの回転完了時のコールバック (音用) */
+  /** 個別サイコロの回転完了時のコールバック */
   public onSingleComplete: ((id: number, value: number) => void) | null = null;
 
-  constructor(container: HTMLElement, themeId: ThemeId, count: DiceCount) {
+  constructor(container: HTMLElement, themeId: ThemeId, count: DiceCount, diceType: DiceType = 'd6') {
     this._themeId = themeId;
     this._count = count;
+    this._diceType = diceType;
 
     this.el = document.createElement('div');
     this.el.className = 'dice-area';
@@ -35,6 +40,8 @@ export class DiceContainer {
       id: d.id,
       value: d.value,
       isRolling: d.isRolling,
+      diceType: d.diceType,
+      sides: d.sides,
     }));
   }
 
@@ -61,12 +68,10 @@ export class DiceContainer {
     this._count = count;
 
     if (diff > 0) {
-      // 追加
       for (let i = 0; i < diff; i++) {
         this.addDie();
       }
     } else {
-      // 削除
       for (let i = 0; i < -diff; i++) {
         this.removeLastDie();
       }
@@ -81,6 +86,14 @@ export class DiceContainer {
     }
   }
 
+  /** 多面体タイプを変更する */
+  setDiceType(diceType: DiceType): void {
+    this._diceType = diceType;
+    for (const dice of this.diceInstances) {
+      dice.setDiceType(diceType);
+    }
+  }
+
   /** 初期サイコロを生成する */
   private createDice(count: number): void {
     for (let i = 0; i < count; i++) {
@@ -91,7 +104,8 @@ export class DiceContainer {
   /** サイコロを1個追加する */
   private addDie(): void {
     const id = this.diceInstances.length;
-    const dice = new Dice(this.el, id, this._themeId);
+    const dice = new Dice(this.el, id, this._themeId, this._diceType);
+    dice.onRollStart = this.handleRollStart.bind(this);
     dice.onRollComplete = this.handleRollComplete.bind(this);
     this.diceInstances.push(dice);
   }
@@ -102,12 +116,21 @@ export class DiceContainer {
     dice?.remove();
   }
 
+  /** ロール開始ハンドラ (個別タップ時も発火) */
+  private handleRollStart(id: number): void {
+    this.onRollStart?.(id);
+  }
+
   /** 個別ロール完了ハンドラ */
   private handleRollComplete(id: number, value: number): void {
     this.onSingleComplete?.(id, value);
-    this.pendingRolls--;
 
-    if (this.pendingRolls <= 0 && !this.isAnyRolling) {
+    if (this.pendingRolls > 0) {
+      this.pendingRolls--;
+    }
+
+    // すべてのサイコロが停止したかチェック
+    if (!this.isAnyRolling) {
       this.pendingRolls = 0;
       this.onAllComplete?.(this.getDiceStates());
     }

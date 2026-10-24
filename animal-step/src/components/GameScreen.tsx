@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { useGame } from '../hooks/useGame';
 import { Board } from './Board';
 import { Hand } from './Hand';
 import { RulesModal } from './RulesModal';
+import { InstallModal } from './InstallModal';
+import { isStandalone, subscribeInstallPrompt } from '../utils/pwa';
 import type { AIDifficulty } from '../types/game';
 
 const DIFFICULTY_OPTIONS: { value: AIDifficulty; label: string; emoji: string; description: string }[] = [
@@ -48,6 +50,17 @@ export const GameScreen: React.FC = () => {
 
   const [selectedDifficulty, setSelectedDifficulty] = useState<AIDifficulty>('somewhat_weak');
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [isInstallOpen, setIsInstallOpen] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [canNativeInstall, setCanNativeInstall] = useState(false);
+
+  useEffect(() => {
+    setIsInstalled(isStandalone());
+    const unsubscribe = subscribeInstallPrompt((canInstall) => {
+      setCanNativeInstall(canInstall);
+    });
+    return unsubscribe;
+  }, []);
 
   // ======== SETUP MENU ========
   if (!isGameStarted) {
@@ -63,13 +76,23 @@ export const GameScreen: React.FC = () => {
           </p>
         </div>
 
-        {/* Rule Button */}
-        <button
-          onClick={() => setIsRulesOpen(true)}
-          className="mb-8 px-6 py-2.5 bg-white text-[#2e7d32] font-black rounded-full shadow-md border-2 border-[#a5d6a7] hover:bg-[#e8f5e9] active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
-        >
-          <span>📖</span> ルールをみる
-        </button>
+        {/* Action Buttons (Rules & Install) */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+          <button
+            onClick={() => setIsRulesOpen(true)}
+            className="px-6 py-2.5 bg-white text-[#2e7d32] font-black rounded-full shadow-md border-2 border-[#a5d6a7] hover:bg-[#e8f5e9] active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span>📖</span> ルールをみる
+          </button>
+          {!isInstalled && (
+            <button
+              onClick={() => setIsInstallOpen(true)}
+              className="px-6 py-2.5 bg-[#43a047] hover:bg-[#2e7d32] text-white font-black rounded-full shadow-md border-2 border-[#2e7d32] active:scale-95 transition-all flex items-center gap-2 cursor-pointer animate-pulse"
+            >
+              <span>📲</span> アプリを追加
+            </button>
+          )}
+        </div>
 
         {/* Mode Selection Cards */}
         <div className="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
@@ -125,6 +148,13 @@ export const GameScreen: React.FC = () => {
 
         {/* Rules Modal */}
         <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
+
+        {/* Install PWA Modal */}
+        <InstallModal
+          isOpen={isInstallOpen}
+          onClose={() => setIsInstallOpen(false)}
+          canNativeInstall={canNativeInstall}
+        />
       </div>
     );
   }
@@ -183,6 +213,14 @@ export const GameScreen: React.FC = () => {
         >
           <span>🚪</span> メニュー
         </button>
+        {!isInstalled && (
+          <button
+            onClick={() => setIsInstallOpen(true)}
+            className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold rounded-full shadow-sm text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center gap-1"
+          >
+            <span>📲</span> アプリ
+          </button>
+        )}
       </div>
 
       <div className="w-full max-w-lg flex flex-col items-center gap-4 sm:gap-6 relative px-2 flex-1 justify-center">
@@ -232,6 +270,13 @@ export const GameScreen: React.FC = () => {
 
       {/* Rules Modal */}
       <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
+
+      {/* Install PWA Modal */}
+      <InstallModal
+        isOpen={isInstallOpen}
+        onClose={() => setIsInstallOpen(false)}
+        canNativeInstall={canNativeInstall}
+      />
 
       {/* Winner Overlay */}
       {winner && (

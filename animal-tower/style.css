@@ -774,65 +774,6 @@ input[type="range"]::-webkit-slider-thumb {
 
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-/* ---------- PWA インストール ---------- */
-.pwa-install-btn {
-    width: 100%;
-    background: #6ab7ff !important;
-    color: #fff !important;
-    text-shadow: 0 1px 0 rgba(0, 0, 0, .2);
-    border: 3px solid var(--ink);
-    border-radius: 14px;
-    padding: 8px 10px;
-    font-size: 13px;
-    font-weight: 900;
-    box-shadow: 0 3px 0 var(--ink);
-}
-
-.install-panel {
-    max-width: 340px;
-    background: #fffdf8;
-}
-
-.install-guide-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 12px 0 16px;
-    text-align: left;
-}
-
-.install-guide-card {
-    background: #fff;
-    border: 3px solid var(--ink);
-    border-radius: 14px;
-    padding: 10px 12px;
-    box-shadow: 0 3px 0 rgba(90, 61, 43, .12);
-}
-
-.install-guide-card .guide-tag {
-    display: inline-block;
-    background: #ffd84a;
-    border: 2px solid var(--ink);
-    border-radius: 8px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 900;
-    color: var(--ink);
-    margin-bottom: 6px;
-}
-
-.install-guide-card p {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1.45;
-}
-
-.install-guide-card p b {
-    color: var(--orange-dark);
-}
-
 @media (max-height: 600px) {
     :root { --hud-h: 48px; --ctrl-h: 76px; }
     .ctrl-btn i { font-size: 20px; }

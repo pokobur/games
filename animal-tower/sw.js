@@ -1,14 +1,14 @@
 /* ==========================================================
    sw.js - ぐらぐら どうぶつタワー Service Worker (PWA)
    ========================================================== */
-const CACHE_NAME = 'animal-tower-v1';
+const CACHE_NAME = 'animal-tower-v2';
 
 const PRECACHE_ASSETS = [
     './',
     './index.html',
     './manifest.json',
     './style.css',
-    './favicon.svg',
+    './favicon.png',
     './icon-192.png',
     './icon-512.png',
     './apple-touch-icon.png',
@@ -19,6 +19,7 @@ const PRECACHE_ASSETS = [
     './js/share.js',
     './js/storage.js',
     './js/audio.js',
+    './js/pwa.js',
     './js/game.js',
 ];
 
@@ -77,7 +78,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 2. 静的アセット: Stale-While-Revalidate (キャッシュを即座に返しつつバックグラウンドで最新取得)
+    // 2. 静的アセット: Stale-While-Revalidate
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             const fetchPromise = fetch(event.request)

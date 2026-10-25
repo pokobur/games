@@ -15,7 +15,7 @@
 
     <!-- Manifest & Icons -->
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -156,15 +156,6 @@
                                 <button type="button" class="toggle-btn" data-size="270">おおきめ</button>
                             </div>
                         </div>
-
-                        <div class="setting-item" id="pwa-install-item">
-                            <div class="setting-label">
-                                <span><i class="fa-solid fa-mobile-screen-button"></i> アプリを いれる</span>
-                            </div>
-                            <button type="button" id="btn-install-pwa" class="sub-btn pwa-install-btn">
-                                <i class="fa-solid fa-download"></i> ホームがめんに ついか
-                            </button>
-                        </div>
                     </div>
 
                     <div class="feedback-box">
@@ -211,25 +202,6 @@
                     <h2 class="ranking-title">🏆 ランキング</h2>
                     <ol id="ranking-list" class="ranking-list"></ol>
                     <p class="ranking-reset-note"><i class="fa-solid fa-calendar-days"></i> まいしゅう にちようび 0:00 に リセットされるよ</p>
-                </div>
-            </section>
-
-            <!-- インストール案内モーダル -->
-            <section id="screen-install" class="overlay modal">
-                <div class="panel install-panel">
-                    <button class="close-btn" id="btn-install-close" aria-label="とじる"><i class="fa-solid fa-xmark"></i></button>
-                    <h2 class="modal-title">📲 ホームがめんに ついか</h2>
-                    <div class="install-guide-list">
-                        <div class="install-guide-card">
-                            <div class="guide-tag">iPhone / iPad</div>
-                            <p>したの <i class="fa-solid fa-arrow-up-from-bracket"></i>（しかくから やじるしが でているマーク）を タップして、<b>「ホームがめんに ついか」</b>を えらんでね！</p>
-                        </div>
-                        <div class="install-guide-card">
-                            <div class="guide-tag">Android / パソコン</div>
-                            <p>がめんの うえや メニューから <b>「アプリを インストール」</b>を えらぶと、すぐにあそべるよ！</p>
-                        </div>
-                    </div>
-                    <button id="btn-install-ok" class="big-btn ok-btn">わかった！</button>
                 </div>
             </section>
 

@@ -6,6 +6,18 @@
     <meta name="theme-color" content="#fff4dc">
     <title>ぐらぐら どうぶつタワー</title>
     <meta name="description" content="ゆびで うごかして、どうぶつを たかく つみあげよう！こどもむけの やさしい バランスゲーム。">
+
+    <!-- PWA & Mobile Web App Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="どうぶつタワー">
+
+    <!-- Manifest & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
@@ -144,6 +156,15 @@
                                 <button type="button" class="toggle-btn" data-size="270">おおきめ</button>
                             </div>
                         </div>
+
+                        <div class="setting-item" id="pwa-install-item">
+                            <div class="setting-label">
+                                <span><i class="fa-solid fa-mobile-screen-button"></i> アプリを いれる</span>
+                            </div>
+                            <button type="button" id="btn-install-pwa" class="sub-btn pwa-install-btn">
+                                <i class="fa-solid fa-download"></i> ホームがめんに ついか
+                            </button>
+                        </div>
                     </div>
 
                     <div class="feedback-box">
@@ -193,6 +214,25 @@
                 </div>
             </section>
 
+            <!-- インストール案内モーダル -->
+            <section id="screen-install" class="overlay modal">
+                <div class="panel install-panel">
+                    <button class="close-btn" id="btn-install-close" aria-label="とじる"><i class="fa-solid fa-xmark"></i></button>
+                    <h2 class="modal-title">📲 ホームがめんに ついか</h2>
+                    <div class="install-guide-list">
+                        <div class="install-guide-card">
+                            <div class="guide-tag">iPhone / iPad</div>
+                            <p>したの <i class="fa-solid fa-arrow-up-from-bracket"></i>（しかくから やじるしが でているマーク）を タップして、<b>「ホームがめんに ついか」</b>を えらんでね！</p>
+                        </div>
+                        <div class="install-guide-card">
+                            <div class="guide-tag">Android / パソコン</div>
+                            <p>がめんの うえや メニューから <b>「アプリを インストール」</b>を えらぶと、すぐにあそべるよ！</p>
+                        </div>
+                    </div>
+                    <button id="btn-install-ok" class="big-btn ok-btn">わかった！</button>
+                </div>
+            </section>
+
             <div id="toast" class="toast"></div>
         </main>
 
@@ -213,6 +253,7 @@
     <script src="js/animals.js"></script>
     <script src="js/background.js"></script>
     <script src="js/share.js"></script>
+    <script src="js/pwa.js"></script>
     <script src="js/game.js"></script>
 </body>
 </html>

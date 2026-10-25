@@ -655,6 +655,34 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .result-buttons { display: flex; flex-direction: column; gap: 8px; }
+.result-buttons .action-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.result-buttons .action-row.has-continue {
+    grid-template-columns: 1.18fr 1fr;
+    gap: 6px;
+}
+
+.result-buttons .action-row.has-continue .big-btn {
+    font-size: 15.5px;
+    padding: 10px 4px;
+    white-space: nowrap;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.continue-btn {
+    background: #ff9f43 !important;
+    text-shadow: 0 2px 0 #d97706 !important;
+    animation: pulse-grow 2s ease-in-out infinite;
+}
+
 .result-buttons .row {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;

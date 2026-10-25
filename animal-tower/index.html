@@ -29,6 +29,16 @@
         }
     </script>
     <link rel="stylesheet" href="style.css">
+
+    <!-- Google AdSense H5 Games Ads (Ad Placement API) -->
+    <script async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3224284690141567"
+      crossorigin="anonymous"
+      data-adbreak-test="on"></script>
+    <script>
+      window.adsbygoogle = window.adsbygoogle || [];
+      var adBreak = adConfig = function(o) { adsbygoogle.push(o); };
+    </script>
 </head>
 <body class="in-title">
     <div id="app">
@@ -185,7 +195,12 @@
                         <input id="res-name" type="text" maxlength="8" placeholder="なまえ（なくてもOK）" autocomplete="off">
                     </label>
                     <div class="result-buttons">
-                        <button id="btn-retry" class="big-btn"><i class="fa-solid fa-rotate-right"></i> もういちど</button>
+                        <div class="action-row" id="action-row">
+                            <button id="btn-continue" class="big-btn continue-btn" style="display: none;">
+                                <i class="fa-solid fa-clapperboard"></i> コンティニュー
+                            </button>
+                            <button id="btn-retry" class="big-btn"><i class="fa-solid fa-rotate-right"></i> もういちど</button>
+                        </div>
                         <div class="row">
                             <button id="btn-share" class="sub-btn"><i class="fa-solid fa-share-nodes"></i> シェア</button>
                             <button id="btn-result-ranking" class="sub-btn"><i class="fa-solid fa-trophy"></i> ランキング</button>

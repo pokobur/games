@@ -91,6 +91,12 @@
             }
         },
 
+        removeRanking(id) {
+            checkWeeklyReset();
+            const list = this.getRanking().filter((x) => x.id !== id);
+            write(KEY.ranking, list);
+        },
+
         getBest() {
             return Number(read(KEY.best, 0)) || 0;
         },

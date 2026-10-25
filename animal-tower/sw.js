@@ -1,7 +1,7 @@
 /* ==========================================================
    sw.js - ぐらぐら どうぶつタワー Service Worker (PWA)
    ========================================================== */
-const CACHE_NAME = 'animal-tower-v2';
+const CACHE_NAME = 'animal-tower-v3';
 
 const PRECACHE_ASSETS = [
     './',
@@ -59,6 +59,14 @@ self.addEventListener('fetch', (event) => {
 
     // http/https のみ対象 (chrome-extension等は無視)
     if (!url.protocol.startsWith('http')) return;
+
+    // Google AdSense や広告関連リクエストは Service Worker をバイパスして直接通信
+    if (url.hostname.includes('googlesyndication.com') ||
+        url.hostname.includes('googleadservices.com') ||
+        url.hostname.includes('doubleclick.net') ||
+        url.hostname.includes('adservice.google')) {
+        return;
+    }
 
     // 1. ページ遷移 (HTML): Network First、失敗時はキャッシュ
     if (event.request.mode === 'navigate') {

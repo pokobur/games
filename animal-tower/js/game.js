@@ -45,6 +45,7 @@
         resTitle: $('result-title'), resSub: $('result-sub'),
         resCount: $('res-count'), resHeight: $('res-height'), resScore: $('res-score'),
         resBest: $('res-best'), resName: $('res-name'),
+        btnContinue: $('btn-continue'), actionRow: $('action-row'),
         rankingList: $('ranking-list'), toast: $('toast'),
     };
 
@@ -70,6 +71,7 @@
     let rotHold = null;           // { dir, start }
     let keys = {};
     let fallen = null;
+    let hasRevived = false;
     let overAt = 0;
     let effects = [];
     let wobbleCool = 0;
@@ -149,6 +151,7 @@
         score = 0;
         stage = 0;
         fallen = null;
+        hasRevived = false;
         effects = [];
         acc = 0;
         aim = { x: W / 2, angle: 0 };
@@ -366,7 +369,98 @@
         ui.resBest.textContent = lines.join('　');
         ui.resBest.classList.toggle('new', isBest && score > 0);
         ui.titleBest.textContent = Storage.getBest().toLocaleString();
+
+        const canContinue = !clear && count > 0 && !hasRevived;
+        if (ui.btnContinue) {
+            ui.btnContinue.style.display = canContinue ? 'inline-flex' : 'none';
+            if (ui.actionRow) {
+                ui.actionRow.classList.toggle('has-continue', canContinue);
+            }
+        }
+
         show(ui.result);
+    }
+
+    function reviveGame() {
+        if (lastEntryId) {
+            Storage.removeRanking(lastEntryId);
+            lastEntryId = null;
+        }
+        hide(ui.result);
+
+        // 最後に落ちた動物を取り消す
+        if (fallen) {
+            Composite.remove(engine.world, fallen);
+            animals = animals.filter((b) => b !== fallen);
+            fallen = null;
+        }
+        if (current) {
+            Composite.remove(engine.world, current);
+            animals = animals.filter((b) => b !== current);
+            current = null;
+        }
+
+        // タワーに残っている動物の物理状態を安定化
+        for (const b of animals) {
+            Body.setVelocity(b, { x: 0, y: 0 });
+            Body.setAngularVelocity(b, 0);
+        }
+
+        // 高さ・スコアの再計算
+        heightCm = towerHeightCm();
+        score = count * 100 + Math.round(heightCm * 10);
+        updateHud(true);
+
+        hasRevived = true;
+        Sound.click();
+        addEffect({ type: 'pop', x: W / 2, y: SPAWN_Y, life: 300 });
+        toast('ふっかつ したよ！ ✨');
+
+        state = 'aim';
+        setLocked(false);
+        spawn();
+    }
+
+    function triggerContinueRewardAd() {
+        Sound.click();
+
+        if (typeof adBreak !== 'function') {
+            console.log('[AdSense] adBreak API is not available. Reviving player directly.');
+            reviveGame();
+            return;
+        }
+
+        const prevSoundEnabled = Sound.isEnabled();
+        let rewardGranted = false;
+
+        adBreak({
+            type: 'reward',
+            name: 'continue_revive',
+            beforeAd: () => {
+                Sound.setEnabled(false);
+            },
+            beforeReward: (showAdFn) => {
+                showAdFn();
+            },
+            adViewed: () => {
+                console.log('[AdSense] Rewarded ad completed. Reviving!');
+                rewardGranted = true;
+                reviveGame();
+            },
+            adDismissed: () => {
+                console.log('[AdSense] Rewarded ad dismissed before completion.');
+                toast('さいごまで みると ふっかつ できるよ');
+            },
+            adBreakDone: (placementInfo) => {
+                console.log('[AdSense] adBreakDone:', placementInfo);
+                Sound.setEnabled(prevSoundEnabled);
+                // 広告がスキップされず、在庫切れやエラー・未配信等の場合は救済復活
+                if (!rewardGranted && placementInfo && placementInfo.breakStatus !== 'dismissed') {
+                    console.log('[AdSense] Ad unavailable or completed (' + placementInfo.breakStatus + '). Reviving player.');
+                    reviveGame();
+                }
+            }
+        });
     }
 
     function renderRanking() {
@@ -470,6 +564,7 @@
         // UI ボタン
         $('btn-start').addEventListener('click', startGame);
         $('btn-retry').addEventListener('click', startGame);
+        if (ui.btnContinue) ui.btnContinue.addEventListener('click', triggerContinueRewardAd);
         ui.btnHome.addEventListener('click', goToTitle);
         ui.btnResultHome.addEventListener('click', goToTitle);
 

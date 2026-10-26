@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     <!-- App Styles -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20261027_3">
 </head>
 <body>
     <div id="app-container">
@@ -71,7 +71,7 @@
             </div>
         </section>
 
-        <!-- ================= 2. テーマ・難易度選択 ================= -->
+        <!-- ================= 2. テーマ（章）選択 ================= -->
         <section id="screen-select" class="screen">
             <div class="select-container">
                 <div class="select-header">
@@ -83,22 +83,60 @@
                 </div>
 
                 <div class="theme-grid" id="theme-grid">
+                    <!-- JSにて動的生成（タップすると難易度選択へ遷移） -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 2.5 難易度選択画面 ================= -->
+        <section id="screen-difficulty" class="screen">
+            <div class="diff-container">
+                <div class="select-header">
+                    <button id="btn-diff-back" class="icon-btn" aria-label="えほん選択へもどる">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h2 class="select-title">むずかしさを えらぼう！</h2>
+                    <div style="width: 48px;"></div>
+                </div>
+
+                <!-- 選択した章のプレビューバナー -->
+                <div class="diff-theme-preview" id="diff-theme-preview">
                     <!-- JSにて動的生成 -->
                 </div>
 
-                <div class="difficulty-box">
-                    <div class="diff-title">むずかしさを えらんでね</div>
-                    <div class="diff-group">
-                        <button class="diff-btn" data-diff="easy">かんたん 🐣</button>
-                        <button class="diff-btn selected" data-diff="normal">ふつう 🦖</button>
-                        <button class="diff-btn" data-diff="hard">むずかしい 🌋</button>
-                        <button class="diff-btn" data-diff="very_hard">とてもむずかしい 👑</button>
-                    </div>
-                </div>
-
-                <div class="select-footer">
-                    <button id="btn-select-start" class="big-btn">
-                        <i class="fa-solid fa-book-bookmark"></i> このえほんで あそぶ！
+                <!-- 4つの難易度カード（タップで即ゲームスタート！） -->
+                <div class="diff-card-grid">
+                    <button class="diff-card-btn diff-easy" data-diff="easy" type="button">
+                        <div class="diff-card-top">
+                            <span class="diff-card-badge">かんたん 🐣</span>
+                            <span class="diff-card-stars">★☆☆☆</span>
+                        </div>
+                        <div class="diff-card-desc">ターゲット: <b>4個</b></div>
+                        <div class="diff-card-sub">みつけやすい安心サイズ！</div>
+                    </button>
+                    <button class="diff-card-btn diff-normal" data-diff="normal" type="button">
+                        <div class="diff-card-top">
+                            <span class="diff-card-badge">ふつう 🦖</span>
+                            <span class="diff-card-stars">★★☆☆</span>
+                        </div>
+                        <div class="diff-card-desc">ターゲット: <b>6個</b></div>
+                        <div class="diff-card-sub">標準のワクワク絵本ミッケ！</div>
+                    </button>
+                    <button class="diff-card-btn diff-hard" data-diff="hard" type="button">
+                        <div class="diff-card-top">
+                            <span class="diff-card-badge">むずかしい 🌋</span>
+                            <span class="diff-card-stars">★★★☆</span>
+                        </div>
+                        <div class="diff-card-desc">ターゲット: <b>8個</b></div>
+                        <div class="diff-card-sub">草や岩の陰に隠れているよ</div>
+                    </button>
+                    <button class="diff-card-btn diff-very_hard" data-diff="very_hard" type="button">
+                        <div class="diff-card-top">
+                            <span class="diff-card-badge">とてもむずかしい 👑</span>
+                            <span class="diff-card-stars">★★★★</span>
+                        </div>
+                        <div class="diff-card-desc">ターゲット: <b>12個</b></div>
+                        <div class="diff-card-sub">約440個の超密集！ズームして探そう</div>
                     </button>
                 </div>
             </div>
@@ -383,14 +421,14 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/util.js?v=20261027_2"></script>
-    <script src="js/data.js?v=20261027_2"></script>
-    <script src="js/art.js?v=20261027_2"></script>
-    <script src="js/audio.js?v=20261027_2"></script>
-    <script src="js/field.js?v=20261027_2"></script>
-    <script src="js/storage.js?v=20261027_2"></script>
-    <script src="js/viewport.js?v=20261027_2"></script>
-    <script src="js/share.js?v=20261027_2"></script>
-    <script src="js/game.js?v=20261027_2"></script>
+    <script src="js/util.js?v=20261027_3"></script>
+    <script src="js/data.js?v=20261027_3"></script>
+    <script src="js/art.js?v=20261027_3"></script>
+    <script src="js/audio.js?v=20261027_3"></script>
+    <script src="js/field.js?v=20261027_3"></script>
+    <script src="js/storage.js?v=20261027_3"></script>
+    <script src="js/viewport.js?v=20261027_3"></script>
+    <script src="js/share.js?v=20261027_3"></script>
+    <script src="js/game.js?v=20261027_3"></script>
 </body>
 </html>

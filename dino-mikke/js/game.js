@@ -58,9 +58,13 @@
 
             // テーマ選択
             themeGrid: document.getElementById('theme-grid'),
-            diffBtns: document.querySelectorAll('.diff-btn'),
             btnSelectBack: document.getElementById('btn-select-back'),
-            btnSelectStart: document.getElementById('btn-select-start'),
+
+            // 難易度選択画面
+            screenDiff: document.getElementById('screen-difficulty'),
+            btnDiffBack: document.getElementById('btn-diff-back'),
+            diffThemePreview: document.getElementById('diff-theme-preview'),
+            diffCardBtns: document.querySelectorAll('.diff-card-btn'),
 
             // ゲームHUD・バー
             btnHome: document.getElementById('btn-home'),
@@ -201,6 +205,11 @@
         } else if (screenName === 'select') {
             renderThemeSelect();
             dom.screenSelect.classList.add('active');
+        } else if (screenName === 'difficulty') {
+            renderDifficultyPreview();
+            const targetEl = dom.screenDiff || document.getElementById('screen-difficulty');
+            if (targetEl) targetEl.classList.add('active');
+            DM.audio.setBgmTheme(state.currentTheme);
         } else if (screenName === 'custom') {
             const targetEl = dom.screenCustom || document.getElementById('screen-custom');
             if (targetEl) targetEl.classList.add('active');
@@ -283,17 +292,26 @@
             DM.audio.click();
             showScreen('title');
         });
-        dom.btnSelectStart.addEventListener('click', () => {
-            DM.audio.click();
-            DM.storage.setLastChoice(state.currentTheme, state.currentDifficulty);
-            startGame(state.currentTheme, state.currentDifficulty);
-        });
-        dom.diffBtns.forEach((btn) => {
+
+        // 難易度選択画面
+        const diffBackBtn = dom.btnDiffBack || document.getElementById('btn-diff-back');
+        if (diffBackBtn) {
+            diffBackBtn.addEventListener('click', () => {
+                DM.audio.click();
+                showScreen('select');
+            });
+        }
+
+        const diffBtns = dom.diffCardBtns && dom.diffCardBtns.length > 0
+            ? dom.diffCardBtns
+            : document.querySelectorAll('.diff-card-btn');
+        diffBtns.forEach((btn) => {
             btn.addEventListener('click', () => {
                 DM.audio.click();
-                dom.diffBtns.forEach((b) => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                state.currentDifficulty = btn.dataset.diff;
+                const diff = btn.dataset.diff;
+                state.currentDifficulty = diff;
+                DM.storage.setLastChoice(state.currentTheme, diff);
+                startGame(state.currentTheme, diff);
             });
         });
 
@@ -809,7 +827,7 @@
         let html = '';
         DM.data.THEMES.forEach((t) => {
             const isSelected = t.id === state.currentTheme;
-            const clears = DM.storage.getClearCount(t.id, state.currentDifficulty);
+            const clears = DM.storage.getClearCount(t.id);
             html += `
                 <div class="theme-card ${isSelected ? 'selected' : ''}" data-theme-id="${t.id}" style="--theme-accent: ${t.color}; --theme-light: ${t.light}">
                     <div class="theme-badge">${t.icon} 第${DM.data.THEMES.indexOf(t) + 1}章</div>
@@ -818,6 +836,7 @@
                     <p class="theme-desc">${t.concept}</p>
                     <div class="theme-meta">
                         <span>クリア: <b>${clears}</b>かい</span>
+                        <span class="theme-card-action">えらぶ <i class="fa-solid fa-chevron-right"></i></span>
                     </div>
                 </div>
             `;
@@ -827,16 +846,29 @@
         dom.themeGrid.querySelectorAll('.theme-card').forEach((card) => {
             card.addEventListener('click', () => {
                 DM.audio.click();
-                dom.themeGrid.querySelectorAll('.theme-card').forEach((c) => c.classList.remove('selected'));
-                card.classList.add('selected');
                 state.currentTheme = card.dataset.themeId;
+                showScreen('difficulty');
             });
         });
+    }
 
-        // 難易度ボタンの選択状態更新
-        dom.diffBtns.forEach((btn) => {
-            btn.classList.toggle('selected', btn.dataset.diff === state.currentDifficulty);
-        });
+    // ---------- 難易度選択プレビュー ----------
+    function renderDifficultyPreview() {
+        const previewEl = dom.diffThemePreview || document.getElementById('diff-theme-preview');
+        if (!previewEl) return;
+        const theme = DM.data.theme(state.currentTheme);
+        const chapterIdx = DM.data.THEMES.indexOf(theme) + 1;
+        previewEl.style.setProperty('--theme-accent', theme.color);
+        previewEl.style.backgroundColor = theme.light;
+
+        previewEl.innerHTML = `
+            <div class="diff-preview-art">${DM.art.icon(theme.dinos[0])}</div>
+            <div class="diff-preview-info">
+                <span class="diff-preview-badge" style="background: ${theme.color}">${theme.icon} 第${chapterIdx}章</span>
+                <h3 class="diff-preview-title">${theme.title}</h3>
+                <p class="diff-preview-concept">${theme.concept}</p>
+            </div>
+        `;
     }
 
     // ---------- 恐竜図鑑 ----------

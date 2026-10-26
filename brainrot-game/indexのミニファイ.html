@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ブレインロットゲーム</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 90%;
+            max-height: 800px;
+            background-color: #fceeb5;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            pointer-events: none;
+            color: #5d4037;
+            font-weight: bold;
+        }
+
+        .score-box {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin-bottom: 5px;
+            font-size: 18px;
+        }
+
+        #game-over, #loading {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10;
+            border-radius: 8px;
+        }
+
+        /* ローディング画面は初期表示 */
+        #loading {
+            display: flex;
+            background: #fceeb5;
+            color: #333;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            background: #ff9800;
+            border: none;
+            color: white;
+            border-radius: 50px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="ui-layer">
+            <div class="score-box">スコア: <span id="current-score">0</span></div>
+            <div class="score-box">ベスト: <span id="best-score">0</span></div>
+        </div>
+
+        <div id="loading">
+            <h2>LOADING...</h2>
+            <p>画像を読み込んでいます</p>
+        </div>
+
+        <div id="game-over">
+            <h2>GAME OVER!</h2>
+            <button onclick="location.reload()">リトライ</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+    <script>
+
+        const FRUITS_CONFIG = [
+            { name: "1", radius: 41, score: 0,   img: "./images/010.png" },
+            { name: "2",     radius: 43, score: 2,   img: "./images/020.png" },
+            { name: "3",     radius: 46, score: 4,   img: "./images/030.png" },
+            { name: "4",   radius: 48, score: 8,   img: "./images/040.png" },
+            { name: "5",       radius: 50, score: 16,  img: "./images/050.png" },
+            { name: "6",     radius: 60, score: 32,  img: "./images/060.png" },
+            { name: "7",       radius: 70, score: 64,  img: "./images/070.png" },
+            { name: "8",       radius: 80, score: 128, img: "./images/080.png" },
+            { name: "9", radius: 90, score: 256, img: "./images/090.png" },
+            { name: "10",     radius: 100, score: 512, img: "./images/0110.png" },
+            { name: "11",     radius: 125, score: 1024, img: "./images/0120.png" }
+        ];
+
+        const DEADLINE_Y = 100; 
+
+        // Matter.js エイリアス
+        const Engine = Matter.Engine,
+              Render = Matter.Render,
+              Runner = Matter.Runner,
+              Bodies = Matter.Bodies,
+              Composite = Matter.Composite,
+              Events = Matter.Events,
+              Body = Matter.Body;
+
+        // グローバル変数
+        let engine, render, runner;
+        let currentScore = 0;
+        let bestScore = localStorage.getItem('suika_best_score') || 0;
+        let isGameOver = false;
+        let canDrop = true;
+        
+        // 画像オブジェクトを保持する配列（プリロード用）
+        const loadedImages = [];
+
+        // 現在の果物データ
+        let currentFruit = {
+            x: 0,
+            y: 50,
+            index: 0,
+        };
+
+        // DOM要素
+        const container = document.getElementById('game-container');
+        const scoreEl = document.getElementById('current-score');
+        const bestScoreEl = document.getElementById('best-score');
+        const gameOverScreen = document.getElementById('game-over');
+        const loadingScreen = document.getElementById('loading');
+
+        // ==========================================
+        //  初期化フロー
+        // ==========================================
+
+        // 1. 画像を全て読み込んでからゲームを開始する
+        preloadImages().then(() => {
+            loadingScreen.style.display = 'none';
+            initGame();
+        }).catch(err => {
+            console.error("画像の読み込みに失敗しました", err);
+            alert("画像の読み込みに失敗しました。");
+        });
+
+        function preloadImages() {
+            const promises = FRUITS_CONFIG.map((fruit, index) => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.src = fruit.img;
+                    img.onload = () => {
+                        loadedImages[index] = img; // 読み込み完了した画像を保存
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        // エラー時はダミーの空画像などで埋めて続行させる
+                        console.warn(`Failed to load: ${fruit.img}`);
+                        loadedImages[index] = null; 
+                        resolve(); 
+                    };
+                });
+            });
+            return Promise.all(promises);
+        }
+
+        function initGame() {
+            bestScoreEl.innerText = bestScore;
+
+            // エンジン作成
+            engine = Engine.create();
+            engine.enableSleeping = false;
+
+            // レンダラー作成
+            render = Render.create({
+                element: container,
+                engine: engine,
+                options: {
+                    width: container.clientWidth,
+                    height: container.clientHeight,
+                    wireframes: false,
+                    background: '#fceeb5',
+                    pixelRatio: window.devicePixelRatio
+                }
+            });
+
+            // 壁の作成
+            const wallOpts = { isStatic: true, render: { fillStyle: '#8d6e63' }, friction: 0.3 };
+            const ground = Bodies.rectangle(container.clientWidth/2, container.clientHeight+30, container.clientWidth, 60, wallOpts);
+            const leftW = Bodies.rectangle(-30, container.clientHeight/2, 60, container.clientHeight*2, wallOpts);
+            const rightW = Bodies.rectangle(container.clientWidth+30, container.clientHeight/2, 60, container.clientHeight*2, wallOpts);
+            Composite.add(engine.world, [ground, leftW, rightW]);
+
+            // 実行開始
+            runner = Runner.create();
+            Runner.run(runner, engine);
+            Render.run(render);
+
+            // 最初の果物セット
+            createNewCurrentFruit();
+            
+            // イベントリスナー設定
+            setupEvents();
+        }
+
+        // ==========================================
+        //  ゲームロジック
+        // ==========================================
+
+        function createNewCurrentFruit() {
+            const randomIndex = Math.floor(Math.random() * 4); // 0〜3
+            currentFruit.index = randomIndex;
+            currentFruit.x = container.clientWidth / 2;
+        }
+
+        function addFruitToWorld(x, y, index) {
+            const config = FRUITS_CONFIG[index];
+            const imgObj = loadedImages[index];
+            
+            let renderConfig = {};
+
+            if (imgObj) {
+                // 画像が読み込めている場合：スプライトとして設定
+                // Matter.jsのスプライト倍率計算: (作りたい大きさの直径) / (元画像の幅)
+                // 少し大きめに表示するために係数を調整しても良い
+                const scale = (config.radius * 2.1) / imgObj.width;
+                
+                renderConfig = {
+                    sprite: {
+                        texture: config.img,
+                        xScale: scale,
+                        yScale: scale
+                    }
+                };
+            } else {
+                // 画像がない場合のフォールバック（色で表示）
+                renderConfig = { fillStyle: '#E91E63' };
+            }
+
+            const fruit = Bodies.circle(x, y, config.radius, {
+                label: 'fruit',
+                fruitIndex: index,
+                restitution: 0.2,
+                friction: 0.1,
+                density: 0.002,
+                render: renderConfig
+            });
+
+            Composite.add(engine.world, fruit);
+        }
+
+        // 衝突時の合体処理
+        function setupEvents() {
+            Events.on(engine, 'collisionStart', (event) => {
+                const pairs = event.pairs;
+                for (let i = 0; i < pairs.length; i++) {
+                    const bodyA = pairs[i].bodyA;
+                    const bodyB = pairs[i].bodyB;
+
+                    if (bodyA.label === 'fruit' && bodyB.label === 'fruit' &&
+                        bodyA.fruitIndex === bodyB.fruitIndex) {
+                        if (!bodyA.isRemoved && !bodyB.isRemoved) {
+                            handleMerge(bodyA, bodyB);
+                        }
+                    }
+                }
+            });
+
+            // カスタム描画（デッドライン、カレント果物）
+            Events.on(render, 'afterRender', () => {
+                const ctx = render.context;
+
+                // 1. デッドライン
+                ctx.beginPath();
+                ctx.moveTo(0, DEADLINE_Y);
+                ctx.lineTo(container.clientWidth, DEADLINE_Y);
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([10, 10]); 
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                if (isGameOver) return;
+
+                // 2. 次に落とす果物（画像で描画）
+                if (canDrop) {
+                    const config = FRUITS_CONFIG[currentFruit.index];
+                    const imgObj = loadedImages[currentFruit.index];
+                    
+                    ctx.globalAlpha = 1.0;
+                    
+                    if (imgObj) {
+                        // 画像を中心に描画
+                        // drawImage(img, x, y, width, height)
+                        const size = config.radius * 2;
+                        ctx.drawImage(
+                            imgObj, 
+                            currentFruit.x - config.radius, 
+                            currentFruit.y - config.radius, 
+                            size, 
+                            size
+                        );
+                    } else {
+                        // 画像ロード失敗時の代替円
+                        ctx.beginPath();
+                        ctx.arc(currentFruit.x, currentFruit.y, config.radius, 0, 2*Math.PI);
+                        ctx.fillStyle = "red";
+                        ctx.fill();
+                    }
+
+                    // 落下予測線
+                    ctx.beginPath();
+                    ctx.moveTo(currentFruit.x, currentFruit.y + config.radius);
+                    ctx.lineTo(currentFruit.x, container.clientHeight);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.globalAlpha = 1.0;
+                }
+
+                checkGameOver();
+            });
+
+            // 入力イベント
+            container.addEventListener('mousemove', handleMove);
+            container.addEventListener('mouseup', handleRelease);
+            container.addEventListener('touchmove', handleMove, { passive: false });
+            container.addEventListener('touchend', handleRelease, { passive: false });
+            
+            // リサイズ
+            window.addEventListener('resize', () => {
+                render.canvas.width = container.clientWidth;
+                render.canvas.height = container.clientHeight;
+            });
+        }
+
+        function handleMerge(bodyA, bodyB) {
+            bodyA.isRemoved = true;
+            bodyB.isRemoved = true;
+            const index = bodyA.fruitIndex;
+
+            // 最大レベルなら消去のみ
+            if (index >= FRUITS_CONFIG.length - 1) {
+                Composite.remove(engine.world, [bodyA, bodyB]);
+                addScore(FRUITS_CONFIG[index].score * 2);
+                return;
+            }
+
+            const newX = (bodyA.position.x + bodyB.position.x) / 2;
+            const newY = (bodyA.position.y + bodyB.position.y) / 2;
+
+            Composite.remove(engine.world, [bodyA, bodyB]);
+            addFruitToWorld(newX, newY, index + 1);
+            addScore(FRUITS_CONFIG[index + 1].score);
+        }
+
+        function addScore(points) {
+            if (isGameOver) return;
+            currentScore += points;
+            scoreEl.innerText = currentScore;
+            if (currentScore > bestScore) {
+                bestScore = currentScore;
+                bestScoreEl.innerText = bestScore;
+                localStorage.setItem('suika_best_score', bestScore);
+            }
+        }
+
+        // ゲームオーバー判定
+        let gameOverTimer = 0;
+        function checkGameOver() {
+            const bodies = Composite.allBodies(engine.world);
+            let isOverLine = false;
+            for (let body of bodies) {
+                if (body.label === 'fruit' && !body.isStatic) {
+                    // 半径の半分くらい猶予を見る
+                    if (body.position.y - (body.circleRadius * 0.5) < DEADLINE_Y) {
+                        if (body.speed < 0.2) {
+                            isOverLine = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (isOverLine) {
+                gameOverTimer++;
+                if (gameOverTimer > 60) triggerGameOver();
+            } else {
+                gameOverTimer = 0;
+            }
+        }
+
+        function triggerGameOver() {
+            isGameOver = true;
+            gameOverScreen.style.display = 'flex';
+            Runner.stop(runner);
+        }
+
+        // 入力ハンドラ
+        function getX(e) {
+            const rect = container.getBoundingClientRect();
+            let clientX = e.clientX;
+            if (e.touches && e.touches.length > 0) clientX = e.touches[0].clientX;
+            else if (e.changedTouches && e.changedTouches.length > 0) clientX = e.changedTouches[0].clientX;
+            
+            let x = clientX - rect.left;
+            const r = FRUITS_CONFIG[currentFruit.index].radius;
+            if (x < r) x = r;
+            if (x > container.clientWidth - r) x = container.clientWidth - r;
+            return x;
+        }
+
+        function handleMove(e) {
+            if (isGameOver || !canDrop) return;
+            e.preventDefault();
+            currentFruit.x = getX(e);
+        }
+
+        function handleRelease(e) {
+            if (isGameOver || !canDrop) return;
+            e.preventDefault();
+            currentFruit.x = getX(e);
+            
+            canDrop = false;
+            addFruitToWorld(currentFruit.x, currentFruit.y, currentFruit.index);
+            
+            setTimeout(() => {
+                createNewCurrentFruit();
+                canDrop = true;
+            }, 800);
+        }
+
+    </script>
+</body>
+</html>

@@ -15,6 +15,7 @@ cp -r AIzukan _site/
 cp -r brainrot-game _site/
 cp -r purupoyo-chain _site/
 cp -r animal-tower _site/
+cp -r dino-mikke _site/
 cp -r junban-maker _site/
 cp index.html _site/
 echo "game.plyo.blog" > _site/CNAME

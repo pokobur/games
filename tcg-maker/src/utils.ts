@@ -39,7 +39,7 @@ export function escapeHtml(s: string): string {
 }
 
 /** 全角数字→半角、数字以外を除去、0〜max にクランプ */
-export function sanitizeNumber(raw: string, maxDigits = 4): string {
+export function sanitizeNumber(raw: string, maxDigits = 6): string {
   return raw
     .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
     .replace(/[^0-9]/g, '')

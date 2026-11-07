@@ -14,7 +14,7 @@ export interface CardData {
   name: string; // カード名 (max 12文字)
   attribute: Attribute;
   rarity: number; // レア度: 1〜10 (星の数)
-  level: number; // レベル: 1〜12
+  level: number; // レベル: 1〜99
   subType: string; // 種族・タイプ (max 8文字)
   effectText: string; // 効果テキスト (max 80文字)
   atk: number; // 攻撃力
@@ -61,11 +61,11 @@ export const LIMITS = {
   subType: 8,
   effect: 80,
   effectLines: 5,
-  statMax: 9999,
+  statMax: 999999,
   rarityMin: 1,
   rarityMax: 10,
   levelMin: 1,
-  levelMax: 12,
+  levelMax: 99,
   scaleMin: 0.5,
   scaleMax: 2.5,
   offsetMax: 800,

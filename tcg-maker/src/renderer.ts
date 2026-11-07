@@ -469,20 +469,76 @@ function drawSymbol(ctx: Ctx, theme: Theme, cx: number, cy: number, r: number): 
   ctx.fillText(theme.kanji, cx, cy + 2);
 }
 
-function drawName(ctx: Ctx, input: RenderInput, theme: Theme, opts: RenderOptions, symbolLeft: number): void {
+function drawLevelBadge(ctx: Ctx, level: number, theme: Theme): number {
   const n = LAYOUT.name;
-  const left = n.x + 22;
-  const right = symbolLeft - 12;
-  const maxW = right - left;
+  const lv = Math.max(1, Math.min(LIMITS.levelMax, Math.round(level || 1)));
+  const cy = n.y + n.h / 2 + 1;
+  const leftX = n.x + 14;
+
+  const labelText = `Lv.${lv}`;
+  ctx.save();
+  ctx.font = `900 30px ${FONT_SERIF}`;
+  const textW = ctx.measureText(labelText).width;
+  const badgeW = Math.max(86, textW + 22);
+  const badgeH = 50;
+  const badgeY = cy - badgeH / 2;
+
+  // バッジ背景
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 6;
+  ctx.shadowOffsetY = 2;
+  roundRectPath(ctx, leftX, badgeY, badgeW, badgeH, 12);
+  ctx.fillStyle = linear(ctx, 0, badgeY, 0, badgeY + badgeH, [
+    'rgba(0,0,0,0.6)',
+    'rgba(25,12,6,0.75)',
+    'rgba(0,0,0,0.85)',
+  ]);
+  ctx.fill();
+  ctx.restore();
+
+  // バッジの金属枠線
+  roundRectPath(ctx, leftX, badgeY, badgeW, badgeH, 12);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = linear(ctx, leftX, badgeY, leftX + badgeW, badgeY + badgeH, theme.metal);
+  ctx.stroke();
+
+  // レベルテキスト
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 28px ${FONT_SERIF}`;
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+  ctx.strokeText(labelText, leftX + badgeW / 2, cy);
+  ctx.fillStyle = '#fff4be';
+  ctx.fillText(labelText, leftX + badgeW / 2, cy);
+  ctx.restore();
+
+  return leftX + badgeW;
+}
+
+function drawName(
+  ctx: Ctx,
+  input: RenderInput,
+  theme: Theme,
+  opts: RenderOptions,
+  leftBound: number,
+  rightBound: number,
+): void {
+  const n = LAYOUT.name;
+  const left = leftBound;
+  const right = rightBound;
+  const maxW = Math.max(100, right - left);
   const cx = (left + right) / 2;
   const cy = n.y + n.h / 2 + 2;
   const isPlaceholder = !input.name && opts.placeholder;
   const text = input.name || (opts.placeholder ? 'カード名' : '');
   if (!text) return;
 
-  let size = 54;
+  let size = 52;
   ctx.font = `900 ${size}px ${FONT_SERIF}`;
-  while (ctx.measureText(text).width > maxW && size > 22) {
+  while (ctx.measureText(text).width > maxW && size > 20) {
     size -= 2;
     ctx.font = `900 ${size}px ${FONT_SERIF}`;
   }
@@ -499,17 +555,18 @@ function drawName(ctx: Ctx, input: RenderInput, theme: Theme, opts: RenderOption
   ctx.restore();
 }
 
-function drawRarityAndLevel(ctx: Ctx, rarity: number, level: number): void {
+function drawRarity(ctx: Ctx, rarity: number): void {
   const lv = LAYOUT.level;
   const count = Math.max(LIMITS.rarityMin, Math.min(LIMITS.rarityMax, Math.round(rarity || 1)));
   const step = 48;
-  const outer = 21;
+  const outer = 22;
   const cy = lv.y + lv.h / 2;
-  const right = lv.x + lv.w - 28;
+  const totalW = (count - 1) * step;
+  const startX = lv.x + (lv.w - totalW) / 2;
 
-  // 星を描画（レア度）
+  // 星を描画（レア度：中央揃え）
   for (let i = 0; i < count; i++) {
-    const cx = right - i * step;
+    const cx = startX + i * step;
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.55)';
     ctx.shadowBlur = 6;
@@ -528,21 +585,6 @@ function drawRarityAndLevel(ctx: Ctx, rarity: number, level: number): void {
     ctx.strokeStyle = '#5d1a00';
     ctx.stroke();
   }
-
-  // レベル描画（左端に太字ゴールドで表示）
-  const lvVal = Math.max(1, Math.round(level || 1));
-  const label = `Lv.${lvVal}`;
-  ctx.save();
-  ctx.font = `900 32px ${FONT_SERIF}`;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-  ctx.strokeText(label, lv.x + 18, cy + 1);
-  ctx.fillStyle = '#ffe9a3';
-  ctx.fillText(label, lv.x + 18, cy + 1);
-  ctx.restore();
 }
 
 function drawBottomCode(ctx: Ctx, serialCode: string, theme: Theme): void {
@@ -639,17 +681,23 @@ function drawStats(ctx: Ctx, input: RenderInput, theme: Theme): void {
     ctx.font = `900 26px ${FONT_SERIF}`;
     ctx.textAlign = 'left';
     ctx.fillStyle = theme.statLabel;
-    ctx.fillText(label, x + 26, cy);
+    ctx.fillText(label, x + 24, cy);
 
     const v = String(Math.max(0, Math.min(LIMITS.statMax, Math.floor(value || 0))));
-    ctx.font = `900 42px ${FONT_SERIF}`;
+    let size = 42;
+    ctx.font = `900 ${size}px ${FONT_SERIF}`;
+    const maxValW = bw - 110;
+    while (ctx.measureText(v).width > maxValW && size > 22) {
+      size -= 2;
+      ctx.font = `900 ${size}px ${FONT_SERIF}`;
+    }
     ctx.textAlign = 'right';
     ctx.lineJoin = 'round';
     ctx.lineWidth = 5;
     ctx.strokeStyle = input.attribute === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
-    ctx.strokeText(v, x + bw - 28, cy);
+    ctx.strokeText(v, x + bw - 24, cy);
     ctx.fillStyle = valueColor;
-    ctx.fillText(v, x + bw - 28, cy);
+    ctx.fillText(v, x + bw - 24, cy);
   });
 }
 
@@ -675,8 +723,9 @@ export function renderCard(ctx: Ctx, input: RenderInput, opts: RenderOptions = {
   const symR = 34;
   const symCx = n.x + n.w - symR - 14;
   drawSymbol(ctx, theme, symCx, n.y + n.h / 2, symR);
-  drawName(ctx, input, theme, opts, symCx - symR);
-  drawRarityAndLevel(ctx, input.rarity, input.level);
+  const levelRight = drawLevelBadge(ctx, input.level, theme);
+  drawName(ctx, input, theme, opts, levelRight + 12, symCx - symR - 12);
+  drawRarity(ctx, input.rarity);
   drawSubType(ctx, input, theme, opts);
   drawEffect(ctx, input, theme, opts);
   drawStats(ctx, input, theme);

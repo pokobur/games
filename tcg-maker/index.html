@@ -15,12 +15,76 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <h1><span class="logo">◆</span> 自作TCGカードメーカー</h1>
+      <button type="button" class="header-logo-btn" title="タイトル画面へ">
+        <span class="logo">◆</span> 自作TCGカードメーカー
+      </button>
+      <div class="header-right">
+        <button type="button" class="icon-btn header-btn" data-action="settings" title="設定" aria-label="設定">⚙️</button>
+      </div>
     </header>
 
     <main class="app-main">
+      <!-- ============ タイトル画面（ホーム） ============ -->
+      <section id="tab-home" class="tab-panel active" aria-label="ホーム">
+        <div class="home-container">
+          <div class="home-hero">
+            <div class="home-badge">オリジナルカード作成スタジオ</div>
+            <h2 class="home-title">自作TCGカードメーカー</h2>
+            <p class="home-subtitle">写真を撮って世界に一つだけのオリジナルトレーディングカードをつくろう！</p>
+
+            <div class="home-visual" id="homeVisual">
+              <div class="home-card-fan" id="homeCardFan"></div>
+            </div>
+
+            <div class="home-stats-pill">
+              <span>コレクション <strong id="homeCardCount">0</strong> 枚</span>
+              <span class="pill-divider">/</span>
+              <span>デッキ <strong id="homeDeckCount">0</strong> 個</span>
+            </div>
+          </div>
+
+          <div class="home-menu-grid">
+            <button type="button" class="home-menu-card create-card" data-goto="create">
+              <div class="menu-icon">✎</div>
+              <div class="menu-text">
+                <h3>カード作成</h3>
+                <p>写真やイラストを取り込んで新規カードをデザイン</p>
+              </div>
+              <span class="menu-arrow">→</span>
+            </button>
+
+            <button type="button" class="home-menu-card collection-card" data-goto="collection">
+              <div class="menu-icon">▦</div>
+              <div class="menu-text">
+                <h3>コレクション</h3>
+                <p>作ったカードを図鑑で一覧確認・検索・編集</p>
+              </div>
+              <span class="menu-arrow">→</span>
+            </button>
+
+            <button type="button" class="home-menu-card deck-card" data-goto="deck">
+              <div class="menu-icon">❖</div>
+              <div class="menu-text">
+                <h3>デッキ・印刷</h3>
+                <p>デッキ構築＆A4 3×3面付けのPDF印刷用出力</p>
+              </div>
+              <span class="menu-arrow">→</span>
+            </button>
+
+            <button type="button" class="home-menu-card settings-card" data-action="settings">
+              <div class="menu-icon">⚙️</div>
+              <div class="menu-text">
+                <h3>設定</h3>
+                <p>バックアップ・データ復元・カードサイズ・初期化</p>
+              </div>
+              <span class="menu-arrow">→</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- ============ カード作成タブ ============ -->
-      <section id="tab-create" class="tab-panel active" aria-label="カード作成">
+      <section id="tab-create" class="tab-panel" aria-label="カード作成" hidden>
         <div class="create-layout">
           <!-- 上部：固定プレビュー -->
           <div class="preview-pane" id="previewPane">
@@ -29,7 +93,7 @@
             </div>
             <div class="preview-bar">
               <span class="edit-status" id="editStatus">新規カード</span>
-              <span class="preview-hint">ドラッグで移動／ピンチ・ホイールで拡大</span>
+              <span class="preview-hint">ドラッグ移動／ピンチ・ホイール拡大</span>
               <button type="button" class="icon-btn" id="togglePreviewSize" title="プレビューの大きさを切替" aria-label="プレビューの大きさを切替">⤢</button>
             </div>
           </div>
@@ -42,10 +106,12 @@
                 <div class="btn-row">
                   <label class="btn primary file-btn">
                     <input type="file" id="imageInput" accept="image/*" hidden>
-                    📷 画像を選択
+                    📷 写真を選択
                   </label>
+                  <button type="button" class="btn" id="openCameraBtn">📸 カメラ</button>
+                  <input type="file" id="cameraCaptureInput" accept="image/*" capture="environment" hidden>
                   <button type="button" class="btn" id="resetTransform">位置リセット</button>
-                  <button type="button" class="btn danger-ghost" id="removeImage">画像を外す</button>
+                  <button type="button" class="btn danger-ghost" id="removeImage">外す</button>
                 </div>
                 <div class="slider-group" id="transformControls">
                   <label class="slider">
@@ -78,15 +144,30 @@
                   <div class="attr-picker" id="attrPicker" role="radiogroup" aria-label="属性"></div>
                 </div>
 
-                <label class="field">
-                  <span class="field-label">レベル <small id="levelOut" class="level-out">★4</small></span>
-                  <input type="range" id="level" min="1" max="10" step="1" value="4">
-                </label>
+                <div class="stat-row">
+                  <label class="field">
+                    <span class="field-label">レア度 <small id="rarityOut" class="level-out">★★★★ (★4)</small></span>
+                    <input type="range" id="rarity" min="1" max="10" step="1" value="4">
+                  </label>
+
+                  <label class="field">
+                    <span class="field-label">レベル <small id="levelOut" class="level-out">Lv.4</small></span>
+                    <input type="range" id="level" min="1" max="12" step="1" value="4">
+                  </label>
+                </div>
 
                 <label class="field">
                   <span class="field-label">種族・タイプ <small class="counter" data-for="subType">0/8</small></span>
                   <input type="text" id="subType" maxlength="8" placeholder="例：ドラゴン族" enterkeyhint="next">
                 </label>
+
+                <div class="field">
+                  <span class="field-label">カード識別番号（5桁コード）</span>
+                  <div class="code-row">
+                    <span class="code-badge" id="serialCodeOut">No. 00000</span>
+                    <button type="button" class="btn small" id="regenerateCode">🎲 番号を再生成</button>
+                  </div>
+                </div>
               </fieldset>
 
               <fieldset class="panel">
@@ -128,11 +209,7 @@
           <div class="page-head">
             <h2>コレクション <small id="collectionCount">0枚</small></h2>
             <div class="btn-row compact">
-              <button type="button" class="btn small" id="exportBackup">バックアップ</button>
-              <label class="btn small file-btn">
-                <input type="file" id="importBackup" accept="application/json,.json" hidden>
-                復元
-              </label>
+              <button type="button" class="btn small" data-action="settings">⚙️ 管理</button>
             </div>
           </div>
           <div class="toolbar">
@@ -160,6 +237,7 @@
         <div class="page deck-page">
           <div class="page-head">
             <h2>デッキ構築・印刷</h2>
+            <button type="button" class="btn small" data-action="settings">⚙️ 印刷設定</button>
           </div>
           <div class="deck-select-row">
             <select id="deckSelect" aria-label="デッキを選択"></select>
@@ -189,10 +267,13 @@
           </div>
 
           <div class="panel print-panel">
-            <h3>🖨 印刷用PDF（A4・300dpi相当）</h3>
-            <p class="note">63×88mm のカードを A4 1ページに 3×3 枚配置します。印刷時は「実際のサイズ（100%）」を選択してください。</p>
+            <div class="print-head-row">
+              <h3>🖨 印刷用PDF出力（A4面付け）</h3>
+              <button type="button" class="btn small ghost-gold" data-action="settings">⚙️ サイズ・詳細設定</button>
+            </div>
+            <p class="note">A4 1ページに 3×3 枚（計9枚）配置します。印刷時は「実際のサイズ（100%）」を選択してください。</p>
             <div class="print-options">
-              <label class="check"><input type="checkbox" id="optCropMarks" checked> トンボ（裁断線）</label>
+              <label class="check"><input type="checkbox" id="optCropMarks" checked> トンボ（裁断線ガイド）</label>
               <label class="check"><input type="checkbox" id="optBacks"> 裏面ページを追加（両面印刷・長辺とじ）</label>
               <label class="inline-field">カード間隔
                 <select id="optGap">
@@ -210,7 +291,8 @@
     </main>
 
     <nav class="tabbar" role="tablist">
-      <button type="button" class="tab active" data-tab="create" role="tab"><span class="tab-icon">✎</span>カード作成</button>
+      <button type="button" class="tab active" data-tab="home" role="tab"><span class="tab-icon">🏠</span>ホーム</button>
+      <button type="button" class="tab" data-tab="create" role="tab"><span class="tab-icon">✎</span>カード作成</button>
       <button type="button" class="tab" data-tab="collection" role="tab"><span class="tab-icon">▦</span>コレクション</button>
       <button type="button" class="tab" data-tab="deck" role="tab"><span class="tab-icon">❖</span>デッキ・印刷</button>
     </nav>

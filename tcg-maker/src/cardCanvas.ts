@@ -15,11 +15,13 @@ export async function renderSavedCard(card: CardData): Promise<HTMLCanvasElement
   const canvas = renderCardToCanvas({
     name: card.name,
     attribute: card.attribute,
-    level: card.level,
+    rarity: card.rarity ?? 4,
+    level: card.level ?? 4,
     subType: card.subType,
     effectText: card.effectText,
     atk: card.atk,
     hp: card.hp,
+    serialCode: card.serialCode || '00000',
     image,
     imageTransform: card.imageTransform,
   });

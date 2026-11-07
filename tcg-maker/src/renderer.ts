@@ -39,11 +39,13 @@ export interface LoadedImage {
 export interface RenderInput {
   name: string;
   attribute: Attribute;
-  level: number;
+  rarity: number; // レア度: 1〜10 (星の数)
+  level: number; // レベル: 1〜12 (数値)
   subType: string;
   effectText: string;
   atk: number;
   hp: number;
+  serialCode: string; // 5桁数字
   image: LoadedImage | null;
   imageTransform: ImageTransform;
 }
@@ -497,13 +499,15 @@ function drawName(ctx: Ctx, input: RenderInput, theme: Theme, opts: RenderOption
   ctx.restore();
 }
 
-function drawLevel(ctx: Ctx, level: number): void {
+function drawRarityAndLevel(ctx: Ctx, rarity: number, level: number): void {
   const lv = LAYOUT.level;
-  const count = Math.max(LIMITS.levelMin, Math.min(LIMITS.levelMax, Math.round(level)));
-  const step = 52;
-  const outer = 23;
+  const count = Math.max(LIMITS.rarityMin, Math.min(LIMITS.rarityMax, Math.round(rarity || 1)));
+  const step = 48;
+  const outer = 21;
   const cy = lv.y + lv.h / 2;
-  const right = lv.x + lv.w - 32;
+  const right = lv.x + lv.w - 28;
+
+  // 星を描画（レア度）
   for (let i = 0; i < count; i++) {
     const cx = right - i * step;
     ctx.save();
@@ -524,20 +528,40 @@ function drawLevel(ctx: Ctx, level: number): void {
     ctx.strokeStyle = '#5d1a00';
     ctx.stroke();
   }
-  // 左端に数値も表示
-  ctx.font = `900 30px ${FONT_SERIF}`;
+
+  // レベル描画（左端に太字ゴールドで表示）
+  const lvVal = Math.max(1, Math.round(level || 1));
+  const label = `Lv.${lvVal}`;
+  ctx.save();
+  ctx.font = `900 32px ${FONT_SERIF}`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.lineWidth = 5;
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-  const label = `Lv.${count}`;
-  const lx = Math.min(lv.x + 22, right - (count - 1) * step - outer - 14 - ctx.measureText(label).width);
-  if (lx >= lv.x + 6) {
-    ctx.strokeText(label, lx, cy + 1);
-    ctx.fillStyle = '#ffe9a3';
-    ctx.fillText(label, lx, cy + 1);
-  }
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+  ctx.strokeText(label, lv.x + 18, cy + 1);
+  ctx.fillStyle = '#ffe9a3';
+  ctx.fillText(label, lv.x + 18, cy + 1);
+  ctx.restore();
+}
+
+function drawBottomCode(ctx: Ctx, serialCode: string, theme: Theme): void {
+  const y = CARD_H - 9;
+  const code = (serialCode || '00000').slice(0, 5);
+  ctx.save();
+  ctx.font = `700 16px "SF Mono", Monaco, Consolas, monospace`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle = theme.statLabel || 'rgba(255,255,255,0.7)';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur = 4;
+  ctx.fillText(`No. ${code}`, 44, y);
+
+  ctx.textAlign = 'right';
+  ctx.font = `500 13px ${FONT_SANS}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('TCG CARD MAKER', CARD_W - 44, y);
+  ctx.restore();
 }
 
 function drawSubType(ctx: Ctx, input: RenderInput, theme: Theme, opts: RenderOptions): void {
@@ -652,10 +676,11 @@ export function renderCard(ctx: Ctx, input: RenderInput, opts: RenderOptions = {
   const symCx = n.x + n.w - symR - 14;
   drawSymbol(ctx, theme, symCx, n.y + n.h / 2, symR);
   drawName(ctx, input, theme, opts, symCx - symR);
-  drawLevel(ctx, input.level);
+  drawRarityAndLevel(ctx, input.rarity, input.level);
   drawSubType(ctx, input, theme, opts);
   drawEffect(ctx, input, theme, opts);
   drawStats(ctx, input, theme);
+  drawBottomCode(ctx, input.serialCode, theme);
 
   ctx.restore();
 }

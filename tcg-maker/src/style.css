@@ -73,9 +73,44 @@ button {
   padding: var(--safe-t) 16px 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   border-bottom: 1px solid var(--line);
   background: rgba(18, 15, 28, 0.85);
   backdrop-filter: blur(10px);
+}
+
+.header-logo-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background: linear-gradient(90deg, #fff3b8, var(--gold), #fff3b8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .app-header h1 {
@@ -114,7 +149,7 @@ button {
 .tabbar {
   flex: none;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   height: calc(var(--tabbar-h) + var(--safe-b));
   padding-bottom: var(--safe-b);
   background: rgba(18, 15, 28, 0.95);
@@ -1107,3 +1142,394 @@ body.modal-open {
     font-size: 19px;
   }
 }
+
+/* ---------------- Home / Title Screen ---------------- */
+.home-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-hero {
+  text-align: center;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  background: rgba(231, 194, 106, 0.12);
+  border: 1px solid rgba(231, 194, 106, 0.3);
+  margin-bottom: 12px;
+}
+
+.home-title {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #ffffff 10%, #fff1b8 40%, var(--gold) 80%, #b8862b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 4px 20px rgba(231, 194, 106, 0.25);
+}
+
+.home-subtitle {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+/* 3Dカードファン展示 */
+.home-visual {
+  position: relative;
+  width: 240px;
+  height: 200px;
+  margin: 10px 0 24px;
+  perspective: 1000px;
+}
+
+.home-card-fan {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.home-card-item {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 110px;
+  height: 154px;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  transition: transform 0.3s ease, filter 0.3s ease;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transform-origin: 50% 120%;
+  background: #1e1b2e;
+}
+
+.home-card-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.home-card-item.card-pos-0 {
+  transform: translateX(-80%) rotate(-14deg);
+  z-index: 1;
+}
+
+.home-card-item.card-pos-1 {
+  transform: translateX(-50%) rotate(0deg);
+  z-index: 2;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(231, 194, 106, 0.3);
+  border-color: var(--gold);
+}
+
+.home-card-item.card-pos-2 {
+  transform: translateX(-20%) rotate(14deg);
+  z-index: 1;
+}
+
+.home-visual:hover .home-card-item.card-pos-0 {
+  transform: translateX(-95%) rotate(-20deg) scale(1.04);
+}
+.home-visual:hover .home-card-item.card-pos-1 {
+  transform: translateX(-50%) rotate(0deg) scale(1.08);
+}
+.home-visual:hover .home-card-item.card-pos-2 {
+  transform: translateX(-5%) rotate(20deg) scale(1.04);
+}
+
+.demo-fire {
+  background: linear-gradient(135deg, #b71c1c, #4a0000);
+}
+.demo-dark {
+  background: linear-gradient(135deg, #4a148c, #14051f);
+}
+.demo-light {
+  background: linear-gradient(135deg, #fbc02d, #5d4037);
+}
+
+.demo-card-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: 'Noto Serif JP', serif;
+}
+.demo-card-inner span {
+  font-size: 32px;
+  font-weight: 900;
+}
+.demo-card-inner strong {
+  font-size: 11px;
+  margin-top: 6px;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+
+.home-stats-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.home-stats-pill strong {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.pill-divider {
+  color: var(--line);
+}
+
+/* メインメニューグリッド */
+.home-menu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+}
+
+@media (min-width: 580px) {
+  .home-menu-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .home-title {
+    font-size: 32px;
+  }
+}
+
+.home-menu-card {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--panel), var(--bg2));
+  text-align: left;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-menu-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.home-menu-card:active {
+  transform: scale(0.98);
+}
+
+.home-menu-card .menu-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.home-menu-card.create-card .menu-icon {
+  background: rgba(231, 194, 106, 0.15);
+  color: var(--gold);
+}
+.home-menu-card.collection-card .menu-icon {
+  background: rgba(67, 160, 71, 0.15);
+  color: #81c784;
+}
+.home-menu-card.deck-card .menu-icon {
+  background: rgba(30, 136, 229, 0.15);
+  color: #64b5f6;
+}
+.home-menu-card.settings-card .menu-icon {
+  background: rgba(156, 39, 176, 0.15);
+  color: #ba68c8;
+}
+
+.home-menu-card .menu-text h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.home-menu-card .menu-text p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.home-menu-card .menu-arrow {
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 700;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.home-menu-card:hover .menu-arrow {
+  transform: translateX(3px);
+  color: var(--gold);
+}
+
+/* ---------------- カード番号コード ---------------- */
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.code-badge {
+  display: inline-block;
+  font-family: "SF Mono", Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--gold);
+}
+
+/* ---------------- カメラモーダル ---------------- */
+.camera-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.camera-head h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--gold);
+}
+
+.camera-view-wrap {
+  position: relative;
+  width: 100%;
+  max-height: 55vh;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.camera-video {
+  width: 100%;
+  height: auto;
+  max-height: 55vh;
+  object-fit: cover;
+  display: block;
+}
+
+.camera-overlay-frame {
+  position: absolute;
+  inset: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+}
+
+.guide-text {
+  background: rgba(0, 0, 0, 0.65);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #fff;
+}
+
+.camera-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.large-shutter {
+  flex: 1;
+  min-height: 48px;
+  font-size: 16px;
+}
+
+/* ---------------- 設定ダイアログ ---------------- */
+.settings-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-head h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--gold);
+}
+
+.print-options-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.print-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ghost-gold {
+  background: transparent;
+  border-color: rgba(231, 194, 106, 0.4);
+  color: var(--gold);
+}
+
+.danger-zone {
+  border-color: rgba(239, 83, 80, 0.4);
+}
+

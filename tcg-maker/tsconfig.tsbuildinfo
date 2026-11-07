@@ -1,1 +1,1 @@
-{"root":["./src/cardcanvas.ts","./src/collection.ts","./src/db.ts","./src/deck.ts","./src/editor.ts","./src/main.ts","./src/nav.ts","./src/pdf.ts","./src/renderer.ts","./src/store.ts","./src/theme.ts","./src/types.ts","./src/utils.ts"],"version":"5.7.3"}
+{"root":["./src/camera.ts","./src/cardcanvas.ts","./src/collection.ts","./src/db.ts","./src/deck.ts","./src/editor.ts","./src/home.ts","./src/main.ts","./src/nav.ts","./src/pdf.ts","./src/renderer.ts","./src/settings.ts","./src/store.ts","./src/theme.ts","./src/types.ts","./src/utils.ts"],"version":"5.7.3"}

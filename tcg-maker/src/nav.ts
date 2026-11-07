@@ -1,7 +1,9 @@
-export type TabName = 'create' | 'collection' | 'deck';
+import { openSettingsModal } from './settings';
+
+export type TabName = 'home' | 'create' | 'collection' | 'deck';
 
 const listeners: ((tab: TabName) => void)[] = [];
-let current: TabName = 'create';
+let current: TabName = 'home';
 
 export function currentTab(): TabName {
   return current;
@@ -34,5 +36,19 @@ export function initNav(): void {
   document.addEventListener('click', (e) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-goto]');
     if (el) switchTab(el.dataset.goto as TabName);
+
+    const openSettings = (e.target as HTMLElement).closest<HTMLElement>('[data-action="settings"]');
+    if (openSettings) {
+      e.preventDefault();
+      openSettingsModal();
+    }
   });
+
+  // タイトルロゴクリックでホームへ
+  document.querySelector('.header-logo-btn')?.addEventListener('click', () => {
+    switchTab('home');
+  });
+
+  // 初期タブ表示
+  switchTab('home');
 }

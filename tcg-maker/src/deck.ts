@@ -14,6 +14,7 @@ import {
   store,
   updateDeck,
 } from './store';
+import { getPrintSettings } from './settings';
 import { $, $input, escapeHtml, hideBusy, showBusy, toast, updateBusy } from './utils';
 
 const ATTR_ORDER = new Map(ATTRIBUTES.map((a, i) => [a, i]));
@@ -124,14 +125,17 @@ async function exportPdf(): Promise<void> {
   }
   showBusy('PDFを準備中…');
   try {
+    const printSet = getPrintSettings();
     const { exportCardsPdf } = await import('./pdf');
     await exportCardsPdf(
       entries,
       {
-        gapMm: parseFloat(($('#optGap') as HTMLSelectElement).value) || 0,
+        gapMm: parseFloat(($('#optGap') as HTMLSelectElement).value) || printSet.gapMm,
         cropMarks: $input('#optCropMarks').checked,
         backs: $input('#optBacks').checked,
         title: deck.name,
+        cardWidthMm: printSet.widthMm,
+        cardHeightMm: printSet.heightMm,
       },
       updateBusy,
     );

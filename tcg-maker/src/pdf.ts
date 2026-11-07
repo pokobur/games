@@ -7,12 +7,12 @@ export interface PdfOptions {
   cropMarks: boolean;
   backs: boolean;
   title: string;
+  cardWidthMm?: number;
+  cardHeightMm?: number;
 }
 
 const PAGE_W = 210; // A4 portrait (mm)
 const PAGE_H = 297;
-const CARD_MM_W = 63;
-const CARD_MM_H = 88;
 const COLS = 3;
 const ROWS = 3;
 const PER_PAGE = COLS * ROWS;
@@ -30,9 +30,11 @@ export async function exportCardsPdf(
 ): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
+  const cardW = opts.cardWidthMm || 63;
+  const cardH = opts.cardHeightMm || 88;
   const g = opts.gapMm;
-  const gridW = COLS * CARD_MM_W + (COLS - 1) * g;
-  const gridH = ROWS * CARD_MM_H + (ROWS - 1) * g;
+  const gridW = COLS * cardW + (COLS - 1) * g;
+  const gridH = ROWS * cardH + (ROWS - 1) * g;
   const ml = (PAGE_W - gridW) / 2;
   const mt = (PAGE_H - gridH) / 2;
 
@@ -58,7 +60,7 @@ export async function exportCardsPdf(
     const col = k % COLS;
     const row = Math.floor(k / COLS);
     const c = mirror ? COLS - 1 - col : col;
-    return { x: ml + c * (CARD_MM_W + g), y: mt + row * (CARD_MM_H + g) };
+    return { x: ml + c * (cardW + g), y: mt + row * (cardH + g) };
   };
 
   for (let p = 0; p < pageCount; p++) {
@@ -67,18 +69,18 @@ export async function exportCardsPdf(
     const pageSlots = slots.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
     pageSlots.forEach((id, k) => {
       const { x, y } = pos(k, false);
-      doc.addImage(images.get(id)!, 'JPEG', x, y, CARD_MM_W, CARD_MM_H, `card-${id}`, 'NONE');
+      doc.addImage(images.get(id)!, 'JPEG', x, y, cardW, cardH, `card-${id}`, 'NONE');
     });
-    if (opts.cropMarks) drawCropMarks(doc, ml, mt, g);
+    if (opts.cropMarks) drawCropMarks(doc, ml, mt, g, cardW, cardH);
 
     if (backImage) {
       // 長辺とじの両面印刷では左右が反転するため列をミラー配置
       doc.addPage();
       pageSlots.forEach((_, k) => {
         const { x, y } = pos(k, true);
-        doc.addImage(backImage, 'JPEG', x, y, CARD_MM_W, CARD_MM_H, 'card-back', 'NONE');
+        doc.addImage(backImage, 'JPEG', x, y, cardW, cardH, 'card-back', 'NONE');
       });
-      if (opts.cropMarks) drawCropMarks(doc, ml, mt, g);
+      if (opts.cropMarks) drawCropMarks(doc, ml, mt, g, cardW, cardH);
     }
     await nextFrame();
   }
@@ -90,21 +92,21 @@ export async function exportCardsPdf(
 type Doc = InstanceType<typeof import('jspdf').jsPDF>;
 
 /** 余白にトンボ（カット位置の目印）を描画 */
-function drawCropMarks(doc: Doc, ml: number, mt: number, g: number): void {
+function drawCropMarks(doc: Doc, ml: number, mt: number, g: number, cardW: number, cardH: number): void {
   const xs = new Set<number>();
   const ys = new Set<number>();
   for (let c = 0; c < COLS; c++) {
-    const x = ml + c * (CARD_MM_W + g);
+    const x = ml + c * (cardW + g);
     xs.add(+x.toFixed(3));
-    xs.add(+(x + CARD_MM_W).toFixed(3));
+    xs.add(+(x + cardW).toFixed(3));
   }
   for (let r = 0; r < ROWS; r++) {
-    const y = mt + r * (CARD_MM_H + g);
+    const y = mt + r * (cardH + g);
     ys.add(+y.toFixed(3));
-    ys.add(+(y + CARD_MM_H).toFixed(3));
+    ys.add(+(y + cardH).toFixed(3));
   }
-  const gridR = ml + COLS * CARD_MM_W + (COLS - 1) * g;
-  const gridB = mt + ROWS * CARD_MM_H + (ROWS - 1) * g;
+  const gridR = ml + COLS * cardW + (COLS - 1) * g;
+  const gridB = mt + ROWS * cardH + (ROWS - 1) * g;
   const off = 1.5;
   const len = Math.max(2, Math.min(5, ml - off - 0.5));
   const lenV = Math.max(2, Math.min(5, mt - off - 0.5));

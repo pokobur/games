@@ -14,6 +14,16 @@ export function uuid(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
+/** 5桁のランダム数字コード (00000〜99999) */
+export function generateSerialCode(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return String(arr[0] % 100000).padStart(5, '0');
+  }
+  return String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+}
+
 export function $(selector: string, root: ParentNode = document): HTMLElement {
   const el = root.querySelector<HTMLElement>(selector);
   if (!el) throw new Error(`Element not found: ${selector}`);

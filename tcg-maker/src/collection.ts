@@ -1,7 +1,6 @@
-import type { Attribute, CardData, DeckData } from './types';
+import type { Attribute, CardData } from './types';
 import { ATTRIBUTES } from './types';
 import { THEMES } from './theme';
-import { db } from './db';
 import { renderSavedCard } from './cardCanvas';
 import { confirmDiscard, loadCardIntoEditor, onCardDeleted } from './editor';
 import { switchTab } from './nav';
@@ -11,23 +10,18 @@ import {
   deleteCard,
   ensureCurrentDeck,
   on,
-  refreshCards,
-  refreshDecks,
   store,
 } from './store';
+import { exportBackup, importBackup } from './settings';
 import {
   $,
   $input,
-  blobToDataUrl,
   canvasToBlob,
   closeModal,
-  dataUrlToBlob,
   downloadBlob,
   escapeHtml,
-  hideBusy,
   openModal,
   safeFileName,
-  showBusy,
   toast,
 } from './utils';
 
@@ -108,8 +102,8 @@ export async function openCardDetail(id: string): Promise<void> {
     <div class="detail-card"><img src="${card.thumbnailDataUrl}" alt="" class="detail-placeholder"></div>
     <div class="detail-info">
       <h3>${escapeHtml(card.name)}</h3>
-      <p class="meta">${THEMES[card.attribute].kanji}属性 ・ Lv.${card.level}${card.subType ? ` ・ ${escapeHtml(card.subType)}` : ''}</p>
-      <p class="meta">ATK ${card.atk} / HP ${card.hp}</p>
+      <p class="meta">${THEMES[card.attribute].kanji}属性 ・ Lv.${card.level ?? 4} ・ ${'★'.repeat(card.rarity ?? 4)}${card.subType ? ` ・ ${escapeHtml(card.subType)}` : ''}</p>
+      <p class="meta">ATK ${card.atk} / HP ${card.hp} ・ No. ${card.serialCode || '00000'}</p>
       <div class="detail-actions">
         <button type="button" class="btn primary" data-act="edit">✎ 編集</button>
         <button type="button" class="btn" data-act="duplicate">複製して編集</button>
@@ -158,74 +152,6 @@ export async function openCardDetail(id: string): Promise<void> {
     }
   });
 }
-
-/* ------------------------------------------------------------------ */
-/* バックアップ（JSON エクスポート / インポート）                      */
-/* ------------------------------------------------------------------ */
-
-interface BackupFile {
-  app: 'tcg-card-maker';
-  version: 1;
-  exportedAt: number;
-  cards: (Omit<CardData, 'imageBlob'> & { imageDataUrl: string | null })[];
-  decks: DeckData[];
-}
-
-async function exportBackup(): Promise<void> {
-  if (!store.cards.length && !store.decks.length) {
-    toast('バックアップするデータがありません');
-    return;
-  }
-  showBusy('バックアップを作成中…');
-  try {
-    const cards = await Promise.all(
-      store.cards.map(async ({ imageBlob, ...rest }) => ({
-        ...rest,
-        imageDataUrl: imageBlob ? await blobToDataUrl(imageBlob) : null,
-      })),
-    );
-    const data: BackupFile = {
-      app: 'tcg-card-maker',
-      version: 1,
-      exportedAt: Date.now(),
-      cards,
-      decks: store.decks,
-    };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const d = new Date();
-    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-    downloadBlob(blob, `tcg-backup-${stamp}.json`);
-  } finally {
-    hideBusy();
-  }
-}
-
-async function importBackup(file: File): Promise<void> {
-  showBusy('復元中…');
-  try {
-    const data = JSON.parse(await file.text()) as BackupFile;
-    if (data.app !== 'tcg-card-maker' || !Array.isArray(data.cards)) throw new Error('invalid');
-    const cards: CardData[] = await Promise.all(
-      data.cards.map(async ({ imageDataUrl, ...rest }) => ({
-        ...rest,
-        imageBlob: imageDataUrl ? await dataUrlToBlob(imageDataUrl) : null,
-      })),
-    );
-    await db.transaction('rw', db.cards, db.decks, async () => {
-      await db.cards.bulkPut(cards);
-      if (Array.isArray(data.decks)) await db.decks.bulkPut(data.decks);
-    });
-    await Promise.all([refreshCards(), refreshDecks()]);
-    toast(`${cards.length}枚のカードを復元しました`, 'success');
-  } catch (err) {
-    console.error(err);
-    toast('バックアップファイルを読み込めませんでした', 'error');
-  } finally {
-    hideBusy();
-  }
-}
-
-/* ------------------------------------------------------------------ */
 
 export function initCollection(): void {
   $('#collectionFilter').addEventListener('click', (e) => {

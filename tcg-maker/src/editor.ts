@@ -13,12 +13,14 @@ import {
 } from './renderer';
 import { saveCard } from './store';
 import { requestPersistence } from './db';
+import { openCameraModal } from './camera';
 import {
   $,
   $input,
   canvasToBlob,
   clamp,
   downloadBlob,
+  generateSerialCode,
   safeFileName,
   sanitizeNumber,
   toast,
@@ -30,11 +32,13 @@ interface EditorState {
   createdAt: number | null;
   name: string;
   attribute: Attribute;
+  rarity: number;
   level: number;
   subType: string;
   effectText: string;
   atk: number;
   hp: number;
+  serialCode: string;
   imageBlob: Blob | null;
   image: LoadedImage | null;
   imageTransform: ImageTransform;
@@ -49,11 +53,13 @@ function blankState(): EditorState {
     createdAt: null,
     name: '',
     attribute: 'fire',
+    rarity: 4,
     level: 4,
     subType: '',
     effectText: '',
     atk: 1000,
     hp: 1000,
+    serialCode: generateSerialCode(),
     imageBlob: null,
     image: null,
     imageTransform: { ...DEFAULT_TRANSFORM },
@@ -74,11 +80,13 @@ function toRenderInput(s: EditorState): RenderInput {
   return {
     name: s.name,
     attribute: s.attribute,
+    rarity: s.rarity,
     level: s.level,
     subType: s.subType,
     effectText: s.effectText,
     atk: s.atk,
     hp: s.hp,
+    serialCode: s.serialCode,
     image: s.image,
     imageTransform: s.imageTransform,
   };
@@ -157,18 +165,30 @@ function syncAttrUI(): void {
 }
 
 function syncLevelUI(): void {
-  $('#levelOut').textContent = `${'★'.repeat(state.level)} Lv.${state.level}`;
+  $('#levelOut').textContent = `Lv.${state.level}`;
+}
+
+function syncRarityUI(): void {
+  $('#rarityOut').textContent = `${'★'.repeat(state.rarity)} (★${state.rarity})`;
+}
+
+function syncSerialCodeUI(): void {
+  const el = document.querySelector('#serialCodeOut');
+  if (el) el.textContent = `No. ${state.serialCode}`;
 }
 
 function stateToForm(): void {
   $input('#name').value = state.name;
   $input('#subType').value = state.subType;
   ($('#effectText') as HTMLTextAreaElement).value = state.effectText;
+  $input('#rarity').value = String(state.rarity);
   $input('#level').value = String(state.level);
   $input('#atk').value = String(state.atk);
   $input('#hp').value = String(state.hp);
   syncAttrUI();
   syncLevelUI();
+  syncRarityUI();
+  syncSerialCodeUI();
   syncTransformUI();
   updateCounters();
   updateStatus();
@@ -216,12 +236,28 @@ function bindForm(): void {
     scheduleFontLoad();
   });
 
+  const rarity = $input('#rarity');
+  rarity.addEventListener('input', () => {
+    state.rarity = clamp(parseInt(rarity.value, 10) || 1, LIMITS.rarityMin, LIMITS.rarityMax);
+    syncRarityUI();
+    markDirty();
+    scheduleRender();
+  });
+
   const level = $input('#level');
   level.addEventListener('input', () => {
     state.level = clamp(parseInt(level.value, 10) || 1, LIMITS.levelMin, LIMITS.levelMax);
     syncLevelUI();
     markDirty();
     scheduleRender();
+  });
+
+  $('#regenerateCode')?.addEventListener('click', () => {
+    state.serialCode = generateSerialCode();
+    syncSerialCodeUI();
+    markDirty();
+    scheduleRender();
+    toast(`コードを再生成しました: ${state.serialCode}`);
   });
 
   for (const id of ['atk', 'hp'] as const) {
@@ -291,19 +327,20 @@ function bindForm(): void {
   fileInput.addEventListener('change', async () => {
     const file = fileInput.files?.[0];
     fileInput.value = '';
-    if (!file) return;
-    try {
-      const blob = await normalizeUpload(file);
-      state.imageBlob = blob;
-      state.image = await loadImageFromBlob(blob);
-      state.imageTransform = { ...DEFAULT_TRANSFORM };
-      syncTransformUI();
-      markDirty();
-      scheduleRender();
-    } catch (err) {
-      console.error(err);
-      toast('画像を読み込めませんでした', 'error');
-    }
+    if (file) await applyImageBlob(file);
+  });
+
+  const camInput = document.querySelector<HTMLInputElement>('#cameraCaptureInput');
+  camInput?.addEventListener('change', async () => {
+    const file = camInput.files?.[0];
+    camInput.value = '';
+    if (file) await applyImageBlob(file);
+  });
+
+  $('#openCameraBtn')?.addEventListener('click', () => {
+    void openCameraModal((blob) => {
+      void applyImageBlob(blob);
+    });
   });
 
   $('#newCard').addEventListener('click', () => {
@@ -334,13 +371,13 @@ export function attrName(attr: Attribute): string {
 /**
  * アップロード画像を正規化：長辺 2000px に縮小し、JPEG/PNG で保存（ストレージ節約と描画高速化）
  */
-async function normalizeUpload(file: File): Promise<Blob> {
+async function normalizeUpload(blob: Blob): Promise<Blob> {
   const MAX = 2000;
-  const img = await loadImageFromBlob(file);
+  const img = await loadImageFromBlob(blob);
   const longSide = Math.max(img.width, img.height);
-  const isPng = file.type === 'image/png';
-  if (longSide <= MAX && (file.type === 'image/jpeg' || isPng) && file.size < 4 * 1024 * 1024) {
-    return file;
+  const isPng = blob.type === 'image/png';
+  if (longSide <= MAX && (blob.type === 'image/jpeg' || isPng) && blob.size < 4 * 1024 * 1024) {
+    return blob;
   }
   const s = Math.min(1, MAX / longSide);
   const c = document.createElement('canvas');
@@ -350,6 +387,21 @@ async function normalizeUpload(file: File): Promise<Blob> {
   cx.imageSmoothingQuality = 'high';
   cx.drawImage(img.source, 0, 0, c.width, c.height);
   return canvasToBlob(c, isPng ? 'image/png' : 'image/jpeg', 0.9);
+}
+
+async function applyImageBlob(blob: Blob): Promise<void> {
+  try {
+    const normalized = await normalizeUpload(blob);
+    state.imageBlob = normalized;
+    state.image = await loadImageFromBlob(normalized);
+    state.imageTransform = { ...DEFAULT_TRANSFORM };
+    syncTransformUI();
+    markDirty();
+    scheduleRender();
+  } catch (err) {
+    console.error(err);
+    toast('画像を読み込めませんでした', 'error');
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -460,11 +512,13 @@ async function save(asCopy: boolean): Promise<void> {
       id: isNew ? uuid() : state.id!,
       name: state.name,
       attribute: state.attribute,
+      rarity: state.rarity,
       level: state.level,
       subType: state.subType,
       effectText: state.effectText,
       atk: state.atk,
       hp: state.hp,
+      serialCode: state.serialCode || generateSerialCode(),
       imageBlob: state.imageBlob,
       imageTransform: { ...state.imageTransform },
       thumbnailDataUrl: makeThumbnail(full),
@@ -509,11 +563,13 @@ export async function loadCardIntoEditor(card: CardData, duplicate = false): Pro
     createdAt: duplicate ? null : card.createdAt,
     name: card.name,
     attribute: card.attribute,
-    level: card.level,
+    rarity: card.rarity ?? 4,
+    level: card.level ?? 4,
     subType: card.subType,
     effectText: card.effectText,
     atk: card.atk,
     hp: card.hp,
+    serialCode: duplicate ? generateSerialCode() : (card.serialCode || generateSerialCode()),
     imageBlob: card.imageBlob,
     image,
     imageTransform: { ...card.imageTransform },

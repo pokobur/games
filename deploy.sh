@@ -69,6 +69,13 @@ npm run build
 cp -r dist ../_site/korokoro-dice
 cd ..
 
+echo "🃏 自作TCGカードメーカー (tcg-maker) をビルド中..."
+cd tcg-maker
+npm install
+npm run build
+cp -r dist ../_site/tcg-maker
+cd ..
+
 if [ -d "money-tree" ]; then
   echo "🌳 マネーツリー (money-tree) をビルド中..."
   cd money-tree

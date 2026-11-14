@@ -3,3 +3,8 @@ node_modules/
 dist/
 _site
 money-tree/
+jinro-gm-twa/
+*.keystore
+*.jks
+*.apk
+*.aab

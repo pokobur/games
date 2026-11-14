@@ -18,6 +18,9 @@ cp -r animal-tower _site/
 cp -r dino-mikke _site/
 cp -r junban-maker _site/
 cp -r jinro-gm _site/
+if [ -d ".well-known" ]; then
+  cp -r .well-known _site/
+fi
 cp index.html _site/
 echo "game.plyo.blog" > _site/CNAME
 

@@ -2361,7 +2361,24 @@ function initApp() {
     }
   });
 
+  initServiceWorker();
   render();
+}
+
+function initServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  const register = () => {
+    navigator.serviceWorker
+      .register('./sw.js')
+      .catch((err) => {
+        console.warn('[SW] Registration failed:', err);
+      });
+  };
+  if (document.readyState === 'complete') {
+    register();
+  } else {
+    window.addEventListener('load', register);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initApp);

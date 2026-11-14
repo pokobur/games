@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>端末1台で遊べる人狼GMアプリ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header id="app-header" class="app-header hidden">
+      <div class="header-brand">
+        <span class="brand-icon" aria-hidden="true">🐺</span>
+        <h1 class="brand-title">人狼GM</h1>
+      </div>
+      <div id="header-setup-actions" class="header-status hidden">
+        <button type="button" id="btn-open-rules-header" class="btn-icon-header" aria-label="ルール・役職ガイド">
+          📖 ルール
+        </button>
+        <button type="button" id="btn-back-title-header" class="btn-icon-header" aria-label="タイトル画面へ戻る">
+          🏠 タイトル
+        </button>
+      </div>
+      <div id="header-status" class="header-status hidden">
+        <span id="header-day-badge" class="badge badge-phase">1日目</span>
+        <button type="button" id="btn-open-info" class="btn-icon-header" aria-label="村の情報・役職内訳">
+          📋 内訳
+        </button>
+        <button type="button" id="btn-abort-game" class="btn-icon-header btn-abort" aria-label="ゲームを中断">
+          ✕ 中断
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Viewport -->
+    <main id="app-main" class="app-main">
+      <!-- Rendered dynamically by app.js based on gameState.phase -->
+    </main>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirm-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+    <div class="modal-card">
+      <h2 id="confirm-modal-title" class="modal-title">確認</h2>
+      <p id="confirm-modal-message" class="modal-message"></p>
+      <div class="modal-actions">
+        <button type="button" id="btn-modal-cancel" class="btn btn-secondary">キャンセル</button>
+        <button type="button" id="btn-modal-ok" class="btn btn-primary">確定する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Village Info / Role Breakdown Modal -->
+  <div id="info-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
+    <div class="modal-card">
+      <div class="modal-header-row">
+        <h2 id="info-modal-title" class="modal-title">📋 村の状況・役職内訳</h2>
+        <button type="button" id="btn-close-info" class="btn-close-modal" aria-label="閉じる">✕</button>
+      </div>
+      <div id="info-modal-body" class="modal-body"></div>
+      <div class="modal-actions single">
+        <button type="button" id="btn-close-info-bottom" class="btn btn-secondary btn-block">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

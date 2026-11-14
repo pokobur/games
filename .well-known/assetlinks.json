@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "blog.plyo.jinrogm",
+      "sha256_cert_fingerprints": [
+        "D3:17:56:98:2F:2C:E6:45:E6:7D:88:54:EA:9B:07:0E:C2:3A:0B:11:7C:BE:E4:EB:85:A4:06:DF:E6:D9:35:49"
+      ]
+    }
+  }
+]

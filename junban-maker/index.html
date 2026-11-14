@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>じゅんばんメーカー</title>
+    <!-- Google Fonts: M PLUS Rounded 1c for child-friendly appearance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background dynamic elements -->
+    <div class="bg-bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <!-- Floating Audio Control -->
+    <button id="btn-audio-toggle" class="btn-floating" aria-label="おんせいミュート切り替え">
+        <span class="icon">🔊</span>
+    </button>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <h1>
+                <span class="logo-icon">🎉</span>
+                じゅんばんメーカー
+            </h1>
+        </header>
+
+        <!-- SCREEN 1: REGISTER -->
+        <section id="screen-register" class="screen active">
+            <div class="card card-main">
+                <h2>
+                    <ruby>参加者<rt>さんかしゃ</rt></ruby>を
+                    <ruby>登録<rt>とうろく</rt></ruby>しよう！
+                </h2>
+                
+                <!-- Registration Type Selector -->
+                <div class="tab-container">
+                    <button id="tab-name-input" class="tab-btn active">📝 <ruby>名前<rt>なまえ</rt></ruby>をいれる</button>
+                    <button id="tab-number-input" class="tab-btn">🔢 <ruby>人数<rt>にんずう</rt></ruby>だけきめる</button>
+                </div>
+
+                <!-- Input form: Names -->
+                <div id="form-name-input" class="form-section active">
+                    <div class="input-row">
+                        <input type="text" id="player-name-input" placeholder="なまえ（れい：たろう）" maxlength="10">
+                        <button id="btn-add-player" class="btn-primary">➕ <ruby>追加<rt>ついか</rt></ruby></button>
+                    </div>
+                </div>
+
+                <!-- Input form: Numbers -->
+                <div id="form-number-input" class="form-section">
+                    <div class="number-selector">
+                        <button id="btn-dec-num" class="btn-circle">-</button>
+                        <input type="number" id="player-count-input" value="5" min="2" max="40" readonly>
+                        <button id="btn-inc-num" class="btn-circle">+</button>
+                        <button id="btn-generate-players" class="btn-primary">🪄 <ruby>つくる<rt>つくる</rt></ruby></button>
+                    </div>
+                </div>
+
+                <!-- Player Count & List -->
+                <div class="player-list-header">
+                    <h3>👥 <ruby>メンバー<rt>メンバー</rt></ruby> (<span id="current-count">0</span><ruby>人<rt>にん</rt></ruby>)</h3>
+                    <button id="btn-clear-players" class="btn-danger btn-sm">🗑️ <ruby>全員消す<rt>ぜんいんけす</rt></ruby></button>
+                </div>
+                
+                <div id="player-list-container" class="player-list-scroll">
+                    <!-- Dynamic names inserted here -->
+                </div>
+
+                <!-- Next button -->
+                <div class="action-row">
+                    <button id="btn-to-game-select" class="btn-next btn-xl disabled" disabled>
+                        🚀 <ruby>ゲームをえらぶ<rt>ゲームをえらぶ</rt></ruby>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 2: GAME SELECT -->
+        <section id="screen-game-select" class="screen">
+            <div class="card card-main">
+                <button class="btn-back btn-sm" id="btn-back-to-register">⬅️ もどる</button>
+                <h2>🎮 <ruby>どのゲームで決める？<rt>どのゲームできめる？</rt></ruby></h2>
+                
+                <div class="game-grid">
+                    <!-- Game 1: Animal Race -->
+                    <button class="game-card" data-game="race">
+                        <span class="game-icon">🏎️</span>
+                        <span class="game-title"><ruby>アニマルレース<rt>あにまるれーす</rt></ruby></span>
+                        <span class="game-badge">ドキドキ！</span>
+                    </button>
+
+                    <!-- Game 2: Roulette -->
+                    <button class="game-card" data-game="roulette">
+                        <span class="game-icon">🎯</span>
+                        <span class="game-title"><ruby>わくわくルーレット<rt>わくわくるーれっと</rt></ruby></span>
+                        <span class="game-badge">ねらえ！</span>
+                    </button>
+
+                    <!-- Game 3: Treasure Box -->
+                    <button class="game-card" data-game="treasure">
+                        <span class="game-icon">📦</span>
+                        <span class="game-title"><ruby>たからばこ選び<rt>たからばこえらび</rt></ruby></span>
+                        <span class="game-badge">一発勝負！</span>
+                    </button>
+
+                    <!-- Game 4: Balloon Pop -->
+                    <button class="game-card" data-game="balloon">
+                        <span class="game-icon">🎈</span>
+                        <span class="game-title"><ruby>風船ポップ<rt>ふうせんぽっぷ</rt></ruby></span>
+                        <span class="game-badge">ハラハラ！</span>
+                    </button>
+
+                    <!-- Game 5: Amidakuji -->
+                    <button class="game-card" data-game="amidakuji">
+                        <span class="game-icon">🪜</span>
+                        <span class="game-title"><ruby>デジタルあみだ<rt>でじたるあみだ</rt></ruby></span>
+                        <span class="game-badge">進化系！</span>
+                    </button>
+
+                    <!-- Game 6: Barrel Pop-up -->
+                    <button class="game-card" data-game="barrel">
+                        <span class="game-icon">🛢️</span>
+                        <span class="game-title"><ruby>タルききいっぱつ！<rt>たるききいっぱつ！</rt></ruby></span>
+                        <span class="game-badge">どきどき！</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: GAME PLAY -->
+        <section id="screen-game-play" class="screen">
+            <div class="card card-main game-play-card">
+                <div class="game-play-header">
+                    <button class="btn-back btn-sm" id="btn-back-to-select">⬅️ やめる</button>
+                    <h2 id="active-game-title">ゲームプレイ</h2>
+                    <div id="game-controls-header">
+                        <!-- Custom settings or info can go here -->
+                    </div>
+                </div>
+                
+                <!-- Mount Container for specific games -->
+                <div id="game-canvas-container" class="game-viewport">
+                    <!-- Dynamic game markup injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 4: RESULTS -->
+        <section id="screen-results" class="screen">
+            <div class="card card-main results-card">
+                <div class="results-celebration">
+                    <span class="trophy-icon">🏆</span>
+                    <h2>✨ <ruby>順番が決まったよ！<rt>じゅんばんがきまったよ！</rt></ruby> ✨</h2>
+                </div>
+
+                <div class="results-table-container">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th><ruby>順位<rt>じゅんい</rt></ruby></th>
+                                <th><ruby>名前<rt>なまえ</rt></ruby></th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-tbody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="results-actions">
+                    <button id="btn-replay-game" class="btn-primary btn-lg">🔄 <ruby>同じゲームでもういちど<rt>おなじげーむでもういちど</rt></ruby></button>
+                    <button id="btn-change-game" class="btn-secondary btn-lg">🎮 <ruby>ちがうゲームで決める<rt>ちがうげーむできめる</rt></ruby></button>
+                    <button id="btn-restart-app" class="btn-danger btn-lg">🏠 <ruby>さいしょに戻る<rt>さいしょにもどる</rt></ruby></button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- POPUP: GAME RULES -->
+    <div id="popup-rules" class="popup-overlay">
+        <div class="popup-content">
+            <h2 id="popup-game-title">ルール</h2>
+            <div class="popup-body">
+                <div class="rules-illustration" id="popup-game-icon">🎮</div>
+                <p id="popup-game-desc">説明が入ります。</p>
+            </div>
+            <div class="popup-actions">
+                <button id="btn-popup-close" class="btn-secondary"><ruby>閉じる<rt>とじる</rt></ruby></button>
+                <button id="btn-popup-start" class="btn-next">🏁 <ruby>スタート！<rt>すたーと！</rt></ruby></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti canvas overlay -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Load main script as ES Module -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

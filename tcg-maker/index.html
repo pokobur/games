@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#14111f">
+  <meta name="description" content="自作TCGカードメーカー - スマホで写真やイラストからオリジナルのトレーディングカードを作成・図鑑管理・デッキ構築・印刷用PDF出力ができるWebアプリ">
+  <title>自作TCGカードメーカー</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="./assets/index-D6CnR6U5.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BKA7d3jN.css">
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <button type="button" class="header-logo-btn" title="タイトル画面へ">
+        <span class="logo">◆</span> 自作TCGカードメーカー
+      </button>
+      <div class="header-right">
+        <button type="button" class="icon-btn header-btn" data-action="settings" title="設定" aria-label="設定">⚙️</button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <!-- ============ タイトル画面（ホーム） ============ -->
+      <section id="tab-home" class="tab-panel active" aria-label="ホーム">
+        <div class="home-container">
+          <div class="home-hero">
+            <div class="home-badge">オリジナルカード作成スタジオ</div>
+            <h2 class="home-title">自作TCGカードメーカー</h2>
+            <p class="home-subtitle">写真を撮って世界に一つだけのオリジナルトレーディングカードをつくろう！</p>
+
+            <div class="home-visual" id="homeVisual">
+              <div class="home-card-fan" id="homeCardFan"></div>
+            </div>
+
+            <div class="home-stats-pill">
+              <span>コレクション <strong id="homeCardCount">0</strong> 枚</span>
+              <span class="pill-divider">/</span>
+              <span>デッキ <strong id="homeDeckCount">0</strong> 個</span>
+            </div>
+          </div>
+
+          <div class="home-menu-grid">
+            <button type="button" class="home-menu-card create-card" data-goto="create">
+              <div class="menu-icon">✎</div>
+              <div class="menu-text">
+                <h3>カード作成</h3>
+                <p>写真やイラストを取り込んで新規カードをデザイン</p>
+              </div>
+              <span class="menu-arrow">→</span>
+            </button>
+
+            <button type="button" class="home-menu-card collection-card" data-goto="collection">
+              <div class="menu-icon">▦</div>
+              <div class="menu-text">
+                <h3>コレクション</h3>
+                <p>作ったカードを図鑑で一覧確認・検索・編集</p>
+              </div>
+              <span class="menu-arrow">→</span>
+            </button>
+
+            <button type="button" class="home-menu-card deck-card" data-goto="deck">
+              <div class="menu-icon">❖</div>
+              <div class="menu-text">
+                <h3>デッキ・印刷</h3>
+                <p>デッキ構築＆A4 3×3面付けのPDF印刷用出力</p>
+              </div>
+              <span class="menu-arrow">→</span>
+            </button>
+
+            <button type="button" class="home-menu-card settings-card" data-action="settings">
+              <div class="menu-icon">⚙️</div>
+              <div class="menu-text">
+                <h3>設定</h3>
+                <p>バックアップ・データ復元・カードサイズ・初期化</p>
+              </div>
+              <span class="menu-arrow">→</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ カード作成タブ ============ -->
+      <section id="tab-create" class="tab-panel" aria-label="カード作成" hidden>
+        <div class="create-layout">
+          <!-- 上部：固定プレビュー -->
+          <div class="preview-pane" id="previewPane">
+            <div class="preview-wrap">
+              <canvas id="preview" width="756" height="1056" aria-label="カードプレビュー"></canvas>
+            </div>
+            <div class="preview-bar">
+              <span class="edit-status" id="editStatus">新規カード</span>
+              <span class="preview-hint">ドラッグ移動／ピンチ・ホイール拡大</span>
+              <button type="button" class="icon-btn" id="togglePreviewSize" title="プレビューの大きさを切替" aria-label="プレビューの大きさを切替">⤢</button>
+            </div>
+          </div>
+
+          <!-- 下部：スクロールフォーム -->
+          <div class="form-pane">
+            <form id="cardForm" autocomplete="off" onsubmit="return false">
+              <fieldset class="panel">
+                <legend>イラスト・写真</legend>
+                <div class="btn-row">
+                  <label class="btn primary file-btn">
+                    <input type="file" id="imageInput" accept="image/*" hidden>
+                    📷 写真を選択
+                  </label>
+                  <button type="button" class="btn" id="openCameraBtn">📸 カメラ</button>
+                  <input type="file" id="cameraCaptureInput" accept="image/*" capture="environment" hidden>
+                  <button type="button" class="btn" id="resetTransform">位置リセット</button>
+                  <button type="button" class="btn danger-ghost" id="removeImage">外す</button>
+                </div>
+                <div class="slider-group" id="transformControls">
+                  <label class="slider">
+                    <span>横位置</span>
+                    <input type="range" id="tx" min="-800" max="800" step="1" value="0">
+                    <output id="txOut">0</output>
+                  </label>
+                  <label class="slider">
+                    <span>縦位置</span>
+                    <input type="range" id="ty" min="-800" max="800" step="1" value="0">
+                    <output id="tyOut">0</output>
+                  </label>
+                  <label class="slider">
+                    <span>拡大</span>
+                    <input type="range" id="tscale" min="0.5" max="2.5" step="0.01" value="1">
+                    <output id="tscaleOut">1.00x</output>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="panel">
+                <legend>基本情報</legend>
+                <label class="field">
+                  <span class="field-label">カード名 <small class="counter" data-for="name">0/12</small></span>
+                  <input type="text" id="name" maxlength="12" placeholder="例：紅蓮の竜騎士" enterkeyhint="next">
+                </label>
+
+                <div class="field">
+                  <span class="field-label">属性</span>
+                  <div class="attr-picker" id="attrPicker" role="radiogroup" aria-label="属性"></div>
+                </div>
+
+                <div class="stat-row">
+                  <label class="field">
+                    <span class="field-label">レア度 <small id="rarityOut" class="level-out">★★★★ (★4)</small></span>
+                    <input type="range" id="rarity" min="1" max="10" step="1" value="4">
+                  </label>
+
+                  <label class="field">
+                    <span class="field-label">レベル <small id="levelOut" class="level-out">Lv.4</small></span>
+                    <input type="range" id="level" min="1" max="99" step="1" value="4">
+                  </label>
+                </div>
+
+                <label class="field">
+                  <span class="field-label">種族・タイプ <small class="counter" data-for="subType">0/8</small></span>
+                  <input type="text" id="subType" maxlength="8" placeholder="例：ドラゴン族" enterkeyhint="next">
+                </label>
+
+                <div class="field">
+                  <span class="field-label">カード識別番号（5桁コード）</span>
+                  <div class="code-row">
+                    <span class="code-badge" id="serialCodeOut">No. 00000</span>
+                    <button type="button" class="btn small" id="regenerateCode">🎲 番号を再生成</button>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset class="panel">
+                <legend>効果・テキスト</legend>
+                <label class="field">
+                  <span class="field-label">効果テキスト <small class="counter" data-for="effectText">0/80</small></span>
+                  <textarea id="effectText" maxlength="80" rows="5" placeholder="1行約16文字で自動折り返し（最大5行）。改行も使えます。"></textarea>
+                </label>
+              </fieldset>
+
+              <fieldset class="panel">
+                <legend>ステータス</legend>
+                <div class="stat-row">
+                  <label class="field">
+                    <span class="field-label">ATK（攻撃力）</span>
+                    <input type="text" id="atk" inputmode="numeric" pattern="[0-9]*" maxlength="6" value="1000">
+                  </label>
+                  <label class="field">
+                    <span class="field-label">HP（体力）</span>
+                    <input type="text" id="hp" inputmode="numeric" pattern="[0-9]*" maxlength="6" value="1000">
+                  </label>
+                </div>
+              </fieldset>
+
+              <div class="action-bar">
+                <button type="button" class="btn" id="newCard">＋ 新規</button>
+                <button type="button" class="btn" id="downloadPng">PNG保存</button>
+                <button type="button" class="btn" id="saveCopy" hidden>複製保存</button>
+                <button type="button" class="btn primary" id="saveCard">💾 図鑑に保存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ コレクション（図鑑）タブ ============ -->
+      <section id="tab-collection" class="tab-panel" aria-label="コレクション" hidden>
+        <div class="page">
+          <div class="page-head">
+            <h2>コレクション <small id="collectionCount">0枚</small></h2>
+            <div class="btn-row compact">
+              <button type="button" class="btn small" data-action="settings">⚙️ 管理</button>
+            </div>
+          </div>
+          <div class="toolbar">
+            <input type="search" id="collectionSearch" placeholder="カード名・種族で検索">
+            <select id="collectionSort" aria-label="並び替え">
+              <option value="updated">更新順</option>
+              <option value="created">作成順</option>
+              <option value="name">名前順</option>
+              <option value="level">レベル順</option>
+              <option value="atk">ATK順</option>
+              <option value="hp">HP順</option>
+            </select>
+          </div>
+          <div class="chip-row" id="collectionFilter"></div>
+          <div class="card-grid" id="collectionGrid"></div>
+          <div class="empty" id="collectionEmpty" hidden>
+            <p>まだカードがありません。</p>
+            <button type="button" class="btn primary" data-goto="create">カードを作る</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ デッキ構築・印刷タブ ============ -->
+      <section id="tab-deck" class="tab-panel" aria-label="デッキ構築・印刷" hidden>
+        <div class="page deck-page">
+          <div class="page-head">
+            <h2>デッキ構築・印刷</h2>
+            <button type="button" class="btn small" data-action="settings">⚙️ 印刷設定</button>
+          </div>
+          <div class="deck-select-row">
+            <select id="deckSelect" aria-label="デッキを選択"></select>
+            <button type="button" class="btn small" id="newDeck">新規</button>
+            <button type="button" class="btn small" id="renameDeck">名前変更</button>
+            <button type="button" class="btn small danger-ghost" id="deleteDeck">削除</button>
+          </div>
+
+          <div class="deck-columns">
+            <div class="panel deck-panel">
+              <div class="deck-summary">
+                <div class="deck-total"><strong id="deckTotal">0</strong> / <span id="deckMax">40</span> 枚</div>
+                <div class="progress"><div class="progress-bar" id="deckProgress"></div></div>
+                <div class="attr-breakdown" id="deckBreakdown"></div>
+              </div>
+              <ul class="deck-list" id="deckList"></ul>
+              <p class="empty small" id="deckEmpty">右（下）のカード一覧からタップして追加してください。</p>
+              <button type="button" class="btn small danger-ghost" id="clearDeck">デッキを空にする</button>
+            </div>
+
+            <div class="panel pool-panel">
+              <h3>カードを追加 <small>タップで +1</small></h3>
+              <input type="search" id="poolSearch" placeholder="カード名で絞り込み">
+              <div class="pool-grid" id="poolGrid"></div>
+              <p class="empty small" id="poolEmpty" hidden>コレクションにカードがありません。</p>
+            </div>
+          </div>
+
+          <div class="panel print-panel">
+            <div class="print-head-row">
+              <h3>🖨 印刷用PDF出力（A4面付け）</h3>
+              <button type="button" class="btn small ghost-gold" data-action="settings">⚙️ サイズ・詳細設定</button>
+            </div>
+            <p class="note">A4 1ページに 3×3 枚（計9枚）配置します。印刷時は「実際のサイズ（100%）」を選択してください。</p>
+            <div class="print-options">
+              <label class="check"><input type="checkbox" id="optCropMarks" checked> トンボ（裁断線ガイド）</label>
+              <label class="check"><input type="checkbox" id="optBacks"> 裏面ページを追加（両面印刷・長辺とじ）</label>
+              <label class="inline-field">カード間隔
+                <select id="optGap">
+                  <option value="0">0mm</option>
+                  <option value="1">1mm</option>
+                  <option value="2" selected>2mm</option>
+                  <option value="3">3mm</option>
+                </select>
+              </label>
+            </div>
+            <button type="button" class="btn primary wide" id="exportPdf">PDFを出力</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar" role="tablist">
+      <button type="button" class="tab active" data-tab="home" role="tab"><span class="tab-icon">🏠</span>ホーム</button>
+      <button type="button" class="tab" data-tab="create" role="tab"><span class="tab-icon">✎</span>カード作成</button>
+      <button type="button" class="tab" data-tab="collection" role="tab"><span class="tab-icon">▦</span>コレクション</button>
+      <button type="button" class="tab" data-tab="deck" role="tab"><span class="tab-icon">❖</span>デッキ・印刷</button>
+    </nav>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true">
+      <button type="button" class="modal-close" data-close-modal aria-label="閉じる">×</button>
+      <div class="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="busy" class="busy" hidden>
+    <div class="spinner"></div>
+    <div class="busy-text">処理中…</div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+</body>
+</html>

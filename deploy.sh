@@ -21,6 +21,7 @@ cp -r jinro-gm _site/
 if [ -d ".well-known" ]; then
   cp -r .well-known _site/
 fi
+touch _site/.nojekyll
 cp index.html _site/
 echo "game.plyo.blog" > _site/CNAME
 

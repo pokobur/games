@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#ecdcc3">
+    <title>きょうりゅうミッケ！ - こども絵本さがしものパズル</title>
+    <meta name="description" content="絵本をめくるように楽しむ恐竜さがしものゲーム。失敗判定なしの安心設計で、お子さまのビジョントレーニングやクールダウンに最適。">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="style.css?v=20261027_3">
+</head>
+<body>
+    <div id="app-container">
+        <!-- ================= 1. タイトル画面 ================= -->
+        <section id="screen-title" class="screen active">
+            <div class="title-card">
+                <span class="title-badge">🌴 絵本をひらいて さがしてみよう！ 🦕</span>
+                <div class="title-logo-box">
+                    <h1 class="title-logo">きょうりゅう<br>ミッケ！</h1>
+                </div>
+                <div class="title-art-wrap" id="title-art">
+                    <!-- メインイラスト（ティラノサウルス） -->
+                    <svg viewBox="-8 -6 216 172" xmlns="http://www.w3.org/2000/svg">
+                        <g stroke="#4a3222" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
+                            <path d="M90 104C82 120 84 136 88 148L104 148C103 134 106 122 110 110Z" fill="#5b9437"/>
+                            <path d="M150 88C158 90 163 96 163 103L157 104C155 99 152 97 146 96Z" fill="#5b9437"/>
+                            <path d="M10 60C36 70 62 74 82 74C96 58 118 54 136 62C150 70 152 92 146 106C138 122 114 126 96 120C78 114 46 92 10 60Z" fill="#7cb655"/>
+                            <path d="M100 117C116 121 134 114 143 100C141 95 137 93 134 95C128 106 114 110 100 111Z" fill="#f1e6a6" stroke="none"/>
+                            <path d="M92 66l5 11M106 59l4 11M120 57l2 11M78 72l4 9" fill="none" stroke-width="5" stroke="#4f8a33"/>
+                            <path d="M124 64C120 46 130 28 152 26C176 24 194 30 196 46C197 56 190 62 180 62L158 62C156 72 148 78 136 78Z" fill="#7cb655"/>
+                            <path d="M158 52C170 55 184 55 195 50" fill="none" stroke-width="2.4"/>
+                            <circle cx="158" cy="40" r="6.5" fill="#fff" stroke-width="2.4"/>
+                            <circle cx="159.2" cy="40.3" r="3.8" fill="#2a1a10" stroke="none"/>
+                            <circle cx="160.3" cy="38.6" r="1.4" fill="#fff" stroke="none"/>
+                            <circle cx="188" cy="36" r="1.8" fill="#4a3222" stroke="none"/>
+                            <ellipse cx="148" cy="52" rx="6" ry="3.5" fill="#ff8f8f" opacity=".55" stroke="none"/>
+                            <path d="M140 88C150 89 158 95 160 103L154 105C151 99 146 97 136 97Z" fill="#7cb655"/>
+                            <path d="M98 96C86 108 90 130 96 148L118 148C116 136 120 124 128 112C130 102 118 94 98 96Z" fill="#7cb655"/>
+                        </g>
+                    </svg>
+                </div>
+                <div class="title-buttons">
+                    <button id="btn-title-start" class="big-btn">
+                        <i class="fa-solid fa-play"></i> すぐにあそぶ！
+                    </button>
+                    <div class="title-sub-row">
+                        <button id="btn-title-select" class="sub-btn">
+                            <i class="fa-solid fa-book-open"></i> えほんをえらぶ
+                        </button>
+                        <button id="btn-title-custom" class="sub-btn custom-highlight" type="button" onclick="if(window.DM && window.DM.game) window.DM.game.showScreen('custom')">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> クリエイティブモード
+                        </button>
+                        <button id="btn-title-zukan" class="sub-btn">
+                            <i class="fa-solid fa-shapes"></i> きょうりゅうずかん
+                        </button>
+                        <button id="btn-title-settings" class="icon-btn" aria-label="せってい">
+                            <i class="fa-solid fa-gear"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="title-stats-bar">
+                    はっけんした きょうりゅう: <b id="title-discovery-count">0 / 32</b>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 2. テーマ（章）選択 ================= -->
+        <section id="screen-select" class="screen">
+            <div class="select-container">
+                <div class="select-header">
+                    <button id="btn-select-back" class="icon-btn" aria-label="もどる">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h2 class="select-title">えほんを えらぼう！</h2>
+                    <div style="width: 48px;"></div>
+                </div>
+
+                <div class="theme-grid" id="theme-grid">
+                    <!-- JSにて動的生成（タップすると難易度選択へ遷移） -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 2.5 難易度選択画面 ================= -->
+        <section id="screen-difficulty" class="screen">
+            <div class="diff-container">
+                <div class="select-header">
+                    <button id="btn-diff-back" class="icon-btn" aria-label="えほん選択へもどる">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h2 class="select-title">むずかしさを えらぼう！</h2>
+                    <div style="width: 48px;"></div>
+                </div>
+
+                <!-- 選択した章のプレビューバナー -->
+                <div class="diff-theme-preview" id="diff-theme-preview">
+                    <!-- JSにて動的生成 -->
+                </div>
+
+                <!-- 4つの難易度カード（タップで即ゲームスタート！） -->
+                <div class="diff-card-grid">
+                    <button class="diff-card-btn diff-easy" data-diff="easy" type="button">
+                        <div class="diff-card-top">
+                            <span class="diff-card-badge">かんたん 🐣</span>
+                            <span class="diff-card-stars">★☆☆☆</span>
+                        </div>
+                        <div class="diff-card-desc">ターゲット: <b>4個</b></div>
+                        <div class="diff-card-sub">みつけやすい安心サイズ！</div>
+                    </button>
+                    <button class="diff-card-btn diff-normal" data-diff="normal" type="button">
+                        <div class="diff-card-top">
+                            <span class="diff-card-badge">ふつう 🦖</span>
+                            <span class="diff-card-stars">★★☆☆</span>
+                        </div>
+                        <div class="diff-card-desc">ターゲット: <b>6個</b></div>
+                        <div class="diff-card-sub">標準のワクワク絵本ミッケ！</div>
+                    </button>
+                    <button class="diff-card-btn diff-hard" data-diff="hard" type="button">
+                        <div class="diff-card-top">
+                            <span class="diff-card-badge">むずかしい 🌋</span>
+                            <span class="diff-card-stars">★★★☆</span>
+                        </div>
+                        <div class="diff-card-desc">ターゲット: <b>8個</b></div>
+                        <div class="diff-card-sub">草や岩の陰に隠れているよ</div>
+                    </button>
+                    <button class="diff-card-btn diff-very_hard" data-diff="very_hard" type="button">
+                        <div class="diff-card-top">
+                            <span class="diff-card-badge">とてもむずかしい 👑</span>
+                            <span class="diff-card-stars">★★★★</span>
+                        </div>
+                        <div class="diff-card-desc">ターゲット: <b>12個</b></div>
+                        <div class="diff-card-sub">約440個の超密集！ズームして探そう</div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 3. ゲーム画面（両開き絵本） ================= -->
+        <section id="screen-game" class="screen">
+            <!-- 最上部固定トップバー -->
+            <header id="game-top-bar">
+                <div class="bar-left">
+                    <button id="btn-home" class="icon-btn" aria-label="タイトルへ">
+                        <i class="fa-solid fa-house"></i>
+                    </button>
+                    <!-- ページ送り・戻しナビゲーション -->
+                    <div class="page-nav-wrap">
+                        <button id="btn-prev-page" class="page-arrow-btn" aria-label="まえのページ" title="まえのページ">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div id="page-indicator">📖 <b>1</b> / 5 ページ</div>
+                        <button id="btn-next-page" class="page-arrow-btn" aria-label="つぎのページ" title="つぎのページ">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="bar-right">
+                    <button id="btn-hint" class="icon-btn" aria-label="ヒント">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </button>
+                    <button id="btn-sound" class="icon-btn" aria-label="おと">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- お題ターゲットバー -->
+            <div id="target-bar-wrap">
+                <div id="target-bar">
+                    <!-- JSにて動的生成 -->
+                </div>
+            </div>
+
+            <!-- メイン探索フィールド（両開き絵本ビュー） -->
+            <main id="book-stage">
+                <!-- 画面端の絵本めくりボタン -->
+                <button id="btn-stage-prev" class="stage-turn-btn prev" aria-label="まえのページ">
+                    <i class="fa-solid fa-chevron-left"></i>
+                    <span>まえ</span>
+                </button>
+                <button id="btn-stage-next" class="stage-turn-btn next" aria-label="つぎのページ">
+                    <i class="fa-solid fa-chevron-right"></i>
+                    <span>つぎ</span>
+                </button>
+
+                <div id="book-viewport">
+                    <!-- SVGがここに挿入されます -->
+                </div>
+                <!-- ズーム補助ボタン -->
+                <div id="zoom-controls">
+                    <button id="btn-zoom-in" class="icon-btn" aria-label="拡大"><i class="fa-solid fa-plus"></i></button>
+                    <button id="btn-zoom-out" class="icon-btn" aria-label="縮小"><i class="fa-solid fa-minus"></i></button>
+                    <button id="btn-zoom-reset" class="icon-btn" aria-label="リセット"><i class="fa-solid fa-compress"></i></button>
+                </div>
+                <!-- ページめくりエフェクト -->
+                <div id="page-turn-effect"></div>
+            </main>
+        </section>
+
+        <!-- ================= 4. リザルト画面 ================= -->
+        <section id="screen-result" class="screen">
+            <div class="result-card">
+                <div class="result-badge">🎉 🎊 🌟</div>
+                <h2 class="result-title">えほん クリア！</h2>
+                <div class="result-diff-badge" id="result-diff-badge"></div>
+                <div class="result-theme-name" id="result-theme-name">みどりの だいジャングル</div>
+                <div class="result-dino-grid" id="result-dino-grid">
+                    <!-- JSにて動的生成 -->
+                </div>
+                <div class="result-actions">
+                    <button id="btn-result-retry" class="big-btn">
+                        <i class="fa-solid fa-rotate-right"></i> もういちど！
+                    </button>
+                    <button id="btn-result-select" class="sub-btn">
+                        <i class="fa-solid fa-book-open"></i> べつのえほん
+                    </button>
+                    <button id="btn-result-zukan" class="sub-btn">
+                        <i class="fa-solid fa-shapes"></i> ずかんをみる
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 5. 恐竜コレクション図鑑 ================= -->
+        <section id="screen-zukan" class="screen">
+            <div class="zukan-container">
+                <div class="zukan-header">
+                    <button id="btn-zukan-close" class="icon-btn" aria-label="とじる">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h2 class="zukan-title">📖 きょうりゅうずかん</h2>
+                    <div class="zukan-progress" id="zukan-progress">0 / 32 体</div>
+                </div>
+                <div class="zukan-grid" id="zukan-grid">
+                    <!-- JSにて動的生成 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 6. じぶんステージ・カスタマイズ画面 ================= -->
+        <section id="screen-custom" class="screen">
+            <div class="custom-container">
+                <div class="custom-header">
+                    <button id="btn-custom-back" class="icon-btn" aria-label="もどる">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <h2 class="custom-title">🛠️ クリエイティブモード</h2>
+                    <div style="width: 48px;"></div>
+                </div>
+
+                <!-- ステップ1: ステージタイトル入力 -->
+                <div class="custom-card custom-title-box">
+                    <label for="custom-stage-title" class="custom-step-label">
+                        <span class="step-num">1</span> ステージの なまえ
+                    </label>
+                    <input type="text" id="custom-stage-title" class="custom-input" placeholder="ぼく・わたしの さがしもの" maxlength="20" value="きょうりゅうを さがせ！">
+                </div>
+
+                <!-- ステップ2: テーマ選択 -->
+                <div class="custom-card">
+                    <div class="custom-step-label">
+                        <span class="step-num">2</span> えほんの ばしょ（テーマ）
+                    </div>
+                    <div class="custom-theme-selector" id="custom-theme-selector">
+                        <!-- JSで6章のサムネイル・バッジを動的生成 -->
+                    </div>
+                </div>
+
+                <!-- ステップ3: 密度・難しさ選択 -->
+                <div class="custom-card">
+                    <div class="custom-step-label">
+                        <span class="step-num">3</span> ぎっしり度（むずかしさ）
+                    </div>
+                    <div class="custom-density-group" id="custom-density-group">
+                        <button class="density-btn" data-density="easy">すっきり 🐣</button>
+                        <button class="density-btn selected" data-density="normal">ふつう 🦖</button>
+                        <button class="density-btn" data-density="hard">ぎっしり 🌋</button>
+                        <button class="density-btn" data-density="very_hard">超カオス 👑</button>
+                    </div>
+                </div>
+
+                <!-- ステップ4: お題ターゲットの選択 -->
+                <div class="custom-card">
+                    <div class="custom-step-label">
+                        <span class="step-num">4</span> さがす お題をえらぼう（タップで追加・へらす）
+                        <span class="target-total-badge" id="custom-target-total-badge">合計: <b>0</b> 個</span>
+                    </div>
+                    <!-- 選択中のお題トレイ -->
+                    <div class="chosen-tray-wrap">
+                        <div class="chosen-tray-title">いま選ばれているお題:</div>
+                        <div class="chosen-tray" id="custom-chosen-tray">
+                            <!-- JSにて動的生成 -->
+                        </div>
+                    </div>
+                    <!-- パレットタブ切替 -->
+                    <div class="custom-palette-tabs">
+                        <button class="palette-tab active" id="tab-palette-theme" data-tab="theme">テーマのなかま</button>
+                        <button class="palette-tab" id="tab-palette-all" data-tab="all">ぜんぶの恐竜（全32種）</button>
+                    </div>
+                    <div class="custom-palette-grid" id="custom-palette-grid">
+                        <!-- JSにて動的生成 -->
+                    </div>
+                </div>
+
+                <!-- ほぞんしたステージ一覧 -->
+                <div class="custom-card saved-stages-box" id="saved-stages-box">
+                    <div class="saved-stages-header">
+                        <div class="custom-step-label"><i class="fa-solid fa-bookmark"></i> ほぞんしたステージ</div>
+                    </div>
+                    <div class="saved-stages-list" id="saved-stages-list">
+                        <!-- JSにて動的生成 -->
+                    </div>
+                </div>
+
+                <!-- アクションフッター -->
+                <div class="custom-footer">
+                    <button id="btn-custom-play" class="big-btn play-custom-btn">
+                        <i class="fa-solid fa-play"></i> このおだいで あそぶ！
+                    </button>
+                    <div class="custom-sub-actions">
+                        <button id="btn-custom-share" class="sub-btn">
+                            <i class="fa-solid fa-share-nodes"></i> リンクをコピー
+                        </button>
+                        <button id="btn-custom-save" class="sub-btn">
+                            <i class="fa-solid fa-floppy-disk"></i> ステージをほぞん
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= モーダル群 ================= -->
+
+        <!-- ヒントモーダル -->
+        <div id="modal-hint" class="modal-overlay">
+            <div class="modal-box">
+                <button id="btn-hint-close" class="icon-btn modal-close-btn" aria-label="とじる">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <h3 class="modal-title">💡 ヒントだよ！</h3>
+                <div class="hint-icon-wrap" id="hint-icon"></div>
+                <p id="hint-text"></p>
+                <button id="btn-hint-guide" class="big-btn">
+                    <i class="fa-solid fa-magnifying-glass-location"></i> そのばしょをみる！
+                </button>
+            </div>
+        </div>
+
+        <!-- 恐竜詳細カードモーダル -->
+        <div id="modal-card" class="modal-overlay">
+            <div class="modal-box">
+                <button id="btn-card-close" class="icon-btn modal-close-btn" aria-label="とじる">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="card-art-box" id="card-dino-icon"></div>
+                <h3 class="card-name" id="card-dino-name">ティラノサウルス</h3>
+                <div class="card-specs">
+                    <div class="spec-row">
+                        <span class="spec-label">じだい:</span>
+                        <span class="spec-val" id="card-dino-era">白亜紀後期</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">おおきさ:</span>
+                        <span class="spec-val" id="card-dino-size">約12m</span>
+                    </div>
+                    <div class="spec-row">
+                        <span class="spec-label">たべもの:</span>
+                        <span class="spec-val" id="card-dino-food">肉食</span>
+                    </div>
+                </div>
+                <p class="card-fact" id="card-dino-fact">解説がここに入ります</p>
+                <div class="card-actions">
+                    <button id="btn-card-share" class="big-btn">
+                        <i class="fa-solid fa-download"></i> カードを ほぞんする
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 設定 & ご意見フォームモーダル -->
+        <div id="screen-settings" class="modal-overlay">
+            <div class="modal-box settings-box">
+                <button id="btn-settings-close" class="icon-btn modal-close-btn" aria-label="とじる">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <h3 class="modal-title">⚙️ せってい</h3>
+
+                <div class="setting-group">
+                    <div class="setting-item">
+                        <label for="slider-se">こうかおん（SE）</label>
+                        <input type="range" id="slider-se" min="0" max="100" value="70">
+                    </div>
+                    <div class="setting-item">
+                        <label for="slider-bgm">おんがく（BGM）</label>
+                        <input type="range" id="slider-bgm" min="0" max="100" value="35">
+                    </div>
+                </div>
+
+                <hr class="modal-divider">
+
+                <div class="feedback-group">
+                    <h4 class="feedback-title">💌 ごいけん・ごようぼう</h4>
+                    <p class="feedback-desc">「こんな きょうりゅうが ほしい！」「ここを なおして！」など、いつでも おしえてね。</p>
+                    <textarea id="feedback-text" rows="3" placeholder="ここにメッセージを かいてね（匿名で おくられます）"></textarea>
+                    <button id="btn-send-feedback" class="sub-btn">
+                        <i class="fa-solid fa-paper-plane"></i> メッセージを おくる
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- トースト通知 -->
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/util.js?v=20261027_3"></script>
+    <script src="js/data.js?v=20261027_3"></script>
+    <script src="js/art.js?v=20261027_3"></script>
+    <script src="js/audio.js?v=20261027_3"></script>
+    <script src="js/field.js?v=20261027_3"></script>
+    <script src="js/storage.js?v=20261027_3"></script>
+    <script src="js/viewport.js?v=20261027_3"></script>
+    <script src="js/share.js?v=20261027_3"></script>
+    <script src="js/game.js?v=20261027_3"></script>
+</body>
+</html>

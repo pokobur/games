@@ -1,0 +1,45 @@
+{
+  "id": "/jinro-gm/",
+  "name": "端末1台で遊べる人狼GMアプリ",
+  "short_name": "人狼GM",
+  "description": "端末1台を順番に回して遊べる人狼ゲームマスターアプリ。役職配布・議論タイマー・投票・夜アクション・勝敗判定を自動進行。",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0d14",
+  "theme_color": "#0a0d14",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    }
+  ]
+}

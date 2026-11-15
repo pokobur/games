@@ -49,19 +49,19 @@ export const ParentDashboard = ({ onBack }) => {
 
   if (!isAuthenticated && profile.parentPin) {
     return (
-      <div className="app-container" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <button className="primary-btn" onClick={onBack} style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#334155' }}>もどる</button>
-        <h2 style={{ color: '#fff', marginBottom: '2rem' }}>保護者用PINコード</h2>
-        <div style={{ fontSize: '3rem', letterSpacing: '1rem', color: '#fde047', marginBottom: '2rem' }}>
+      <div className="app-container" style={{ padding: '4.5rem 2rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflowY: 'auto' }}>
+        <button className="primary-btn" onClick={onBack} style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#334155', padding: '0.6rem 1rem', fontSize: '1rem' }}>もどる</button>
+        <h2 style={{ color: '#fff', marginBottom: '1.2rem' }}>保護者用PINコード</h2>
+        <div style={{ fontSize: '2.5rem', letterSpacing: '1rem', color: '#fde047', marginBottom: '1.2rem' }}>
           {inputPin.padEnd(4, '・')}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem' }}>
           {[1,2,3,4,5,6,7,8,9].map(n => (
-            <button key={n} className="option-btn" style={{ padding: '1.5rem', fontSize: '1.5rem' }} onClick={() => handleKeypad(n.toString())}>{n}</button>
+            <button key={n} className="option-btn" style={{ padding: '1rem 1.4rem', fontSize: '1.4rem' }} onClick={() => handleKeypad(n.toString())}>{n}</button>
           ))}
-          <button className="option-btn" style={{ padding: '1.5rem', fontSize: '1rem', background: '#ef4444' }} onClick={handleClear}>C</button>
-          <button className="option-btn" style={{ padding: '1.5rem', fontSize: '1.5rem' }} onClick={() => handleKeypad('0')}>0</button>
-          <button className="option-btn" style={{ padding: '1.5rem', fontSize: '1rem', background: '#38bdf8' }} onClick={handleSubmit}>OK</button>
+          <button className="option-btn" style={{ padding: '1rem 1.4rem', fontSize: '1rem', background: '#ef4444' }} onClick={handleClear}>C</button>
+          <button className="option-btn" style={{ padding: '1rem 1.4rem', fontSize: '1.4rem' }} onClick={() => handleKeypad('0')}>0</button>
+          <button className="option-btn" style={{ padding: '1rem 1.4rem', fontSize: '1rem', background: '#38bdf8' }} onClick={handleSubmit}>OK</button>
         </div>
       </div>
     );
@@ -69,20 +69,20 @@ export const ParentDashboard = ({ onBack }) => {
 
   if (isSettingPin && !profile.parentPin && !isAuthenticated) {
     return (
-      <div className="app-container" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <button className="primary-btn" onClick={onBack} style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#334155' }}>もどる</button>
-        <h2 style={{ color: '#fff', marginBottom: '1rem' }}>PINコードの初期設定</h2>
-        <p style={{ color: '#cbd5e1', marginBottom: '2rem', textAlign: 'center' }}>子どもが勝手に設定を変えられないように、<br/>4桁の数字を決めてください。</p>
-        <div style={{ fontSize: '3rem', letterSpacing: '1rem', color: '#fde047', marginBottom: '2rem' }}>
+      <div className="app-container" style={{ padding: '4.5rem 2rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflowY: 'auto' }}>
+        <button className="primary-btn" onClick={onBack} style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#334155', padding: '0.6rem 1rem', fontSize: '1rem' }}>もどる</button>
+        <h2 style={{ color: '#fff', marginBottom: '0.8rem' }}>PINコードの初期設定</h2>
+        <p style={{ color: '#cbd5e1', marginBottom: '1.2rem', textAlign: 'center', fontSize: '0.9rem' }}>子どもが勝手に設定を変えられないように、<br/>4桁の数字を決めてください。</p>
+        <div style={{ fontSize: '2.5rem', letterSpacing: '1rem', color: '#fde047', marginBottom: '1.2rem' }}>
           {newPin.padEnd(4, '・')}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem' }}>
           {[1,2,3,4,5,6,7,8,9].map(n => (
-            <button key={n} className="option-btn" style={{ padding: '1.5rem', fontSize: '1.5rem' }} onClick={() => handleKeypad(n.toString())}>{n}</button>
+            <button key={n} className="option-btn" style={{ padding: '1rem 1.4rem', fontSize: '1.4rem' }} onClick={() => handleKeypad(n.toString())}>{n}</button>
           ))}
-          <button className="option-btn" style={{ padding: '1.5rem', fontSize: '1rem', background: '#ef4444' }} onClick={handleClear}>C</button>
-          <button className="option-btn" style={{ padding: '1.5rem', fontSize: '1.5rem' }} onClick={() => handleKeypad('0')}>0</button>
-          <button className="option-btn" style={{ padding: '1.5rem', fontSize: '1rem', background: '#38bdf8' }} onClick={handleSubmit}>OK</button>
+          <button className="option-btn" style={{ padding: '1rem 1.4rem', fontSize: '1rem', background: '#ef4444' }} onClick={handleClear}>C</button>
+          <button className="option-btn" style={{ padding: '1rem 1.4rem', fontSize: '1.4rem' }} onClick={() => handleKeypad('0')}>0</button>
+          <button className="option-btn" style={{ padding: '1rem 1.4rem', fontSize: '1rem', background: '#38bdf8' }} onClick={handleSubmit}>OK</button>
         </div>
       </div>
     );

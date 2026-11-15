@@ -11,9 +11,14 @@ export function createHomeScreen({ onStart, onGallery, onResume }) {
   screen.className = 'screen';
   screen.innerHTML = `
     <div class="home-top-bar">
-      <button class="icon-btn" id="home-sound-btn" aria-label="音の切り替え">
-        ${soundManager.isMuted ? '🔇' : '🔊'}
-      </button>
+      <div class="home-top-left">
+        <button class="icon-btn" id="home-sound-btn" aria-label="音の切り替え">
+          ${soundManager.isMuted ? '🔇' : '🔊'}
+        </button>
+        <button class="rule-pill-btn" id="home-rule-btn" aria-label="あそびかた・ルール">
+          📖 ルール
+        </button>
+      </div>
       <div class="home-top-right">
         <button class="icon-btn" id="home-api-setup" title="API設定" aria-label="API設定">
           🔒
@@ -51,12 +56,56 @@ export function createHomeScreen({ onStart, onGallery, onResume }) {
       </div>
     </div>
 
+    <!-- ルール説明モーダル（ソリッド完全不透明） -->
+    <div class="modal-backdrop hidden" id="rule-modal">
+      <div class="modal-card rule-modal-card">
+        <button class="modal-close-btn" id="rule-modal-close" aria-label="とじる">✕</button>
+        <h2>📖 あそびかた（ルール）</h2>
+        <div class="rule-scroll-body">
+          <div class="rule-step">
+            <div class="rule-step-badge">1</div>
+            <div class="rule-step-text">
+              <strong>🎤 まほうのじゅもん</strong><br>
+              マイクをおして「つくりたいえ」をしゃべってね！おすすめボタンやキーボードでもえらべるよ。
+            </div>
+          </div>
+          <div class="rule-step">
+            <div class="rule-step-badge">2</div>
+            <div class="rule-step-text">
+              <strong>🎨 すうじのぬりえ</strong><br>
+              下のいろをえらんで、おなじすうじのマスをタップしたり、ゆびでなぞってぬろう！
+            </div>
+          </div>
+          <div class="rule-step">
+            <div class="rule-step-badge">3</div>
+            <div class="rule-step-text">
+              <strong>🌟 ひかるコレクション</strong><br>
+              ぜんぶぬれたらほぞんしよう！ギャラリーでピカピカ光るし、もう1回あそびなおせるよ。
+            </div>
+          </div>
+
+          <div class="rule-api-box">
+            <div class="rule-api-title">✨ Gemini APIキーでもっとたのしく！</div>
+            <p class="rule-api-desc">
+              そのままでも「ねこ」「ドラゴン」などの楽しい絵で遊べますが、<strong>Gemini APIキー</strong>を入力すると、お子さまが話した<strong>どんな言葉からでもAIがオリジナルの絵を作ってくれる</strong>ようになり、もっと楽しめます！
+            </p>
+            <button class="btn btn-blue btn-sm rule-open-api-btn" id="rule-open-api">
+              🔒 APIキーを設定する
+            </button>
+          </div>
+        </div>
+        <button class="btn btn-primary rule-ok-btn" id="rule-modal-ok">
+          わかった！あそぶ！
+        </button>
+      </div>
+    </div>
+
     <!-- API設定モーダル（ソリッド完全不透明） -->
     <div class="modal-backdrop hidden" id="api-modal">
       <div class="modal-card">
         <button class="modal-close-btn" id="api-modal-close">✕</button>
         <h2>🔒 おとなのせってい (API)</h2>
-        <p class="modal-desc">Google AI Studio の Gemini APIキーを入力すると、本物のAI画像生成が楽しめます。<br>※未入力でも楽しいプリセットで遊べます！</p>
+        <p class="modal-desc">Google AI Studio の <strong>Gemini APIキー</strong> を入力すると、どんな言葉からでもAIがオリジナルのドット絵を作ってくれて、もっと楽しめます！<br>※APIキーはお使いの端末内にのみ保存されます。<br>※未入力でも楽しいプリセットで遊べます！</p>
         <div class="modal-actions">
           <input type="password" id="api-key-input" placeholder="AIzaSy..." class="modal-input" />
           <button class="btn btn-primary" id="api-key-save">
@@ -105,10 +154,29 @@ export function createHomeScreen({ onStart, onGallery, onResume }) {
   screen.querySelector('#home-gallery').addEventListener('click', onGallery);
   screen.querySelector('#home-resume').addEventListener('click', onResume);
 
-  // API設定
+  // ルールモーダル制御
+  const ruleModal = screen.querySelector('#rule-modal');
   const apiModal = screen.querySelector('#api-modal');
   const apiKeyInput = screen.querySelector('#api-key-input');
 
+  screen.querySelector('#home-rule-btn').addEventListener('click', () => {
+    soundManager.playPop(1);
+    ruleModal.classList.remove('hidden');
+  });
+  screen.querySelector('#rule-modal-close').addEventListener('click', () => {
+    ruleModal.classList.add('hidden');
+  });
+  screen.querySelector('#rule-modal-ok').addEventListener('click', () => {
+    soundManager.playPop(2);
+    ruleModal.classList.add('hidden');
+  });
+  screen.querySelector('#rule-open-api').addEventListener('click', () => {
+    ruleModal.classList.add('hidden');
+    apiKeyInput.value = loadApiKey();
+    apiModal.classList.remove('hidden');
+  });
+
+  // API設定
   screen.querySelector('#home-api-setup').addEventListener('click', () => {
     apiKeyInput.value = loadApiKey();
     apiModal.classList.remove('hidden');
@@ -200,11 +268,11 @@ export const homeScreenCSS = `
 /* ====== HomeScreen ====== */
 #screen-home {
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   background: #1A1A2E;
   position: relative;
   overflow-y: auto;
-  padding: 12px 16px 24px;
+  padding: 12px 16px 20px;
 }
 
 .home-top-bar {
@@ -214,21 +282,50 @@ export const homeScreenCSS = `
   width: 100%;
   max-width: 440px;
   z-index: 10;
+  flex-shrink: 0;
 }
 
+.home-top-left,
 .home-top-right {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.rule-pill-btn {
+  background: #3A86FF;
+  color: #FFFFFF;
+  border: 2px solid #0A0E17;
+  border-radius: var(--radius-full);
+  height: 42px;
+  padding: 0 14px;
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-shadow: 0 4px 0 #0A0E17;
+  transition: transform 0.12s ease;
+}
+
+.rule-pill-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #0A0E17;
 }
 
 .home-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  flex: 1 0 auto;
+  gap: 14px;
   width: 100%;
   max-width: 420px;
-  margin: auto 0;
+  padding: 12px 0 8px;
 }
 
 .home-title-wrap {
@@ -411,5 +508,101 @@ export const homeScreenCSS = `
 .modal-close-btn:active {
   transform: translateY(2px);
   box-shadow: 0 2px 0 #0A0E17;
+}
+
+/* Rule Modal */
+.rule-modal-card {
+  max-width: 410px;
+  max-height: 85dvh;
+  padding: 22px 18px 18px;
+}
+
+.rule-scroll-body {
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  padding-right: 4px;
+  margin-bottom: 14px;
+}
+
+.rule-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #0F172A;
+  border: 3px solid #0F3460;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.rule-step-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #FF6B35;
+  color: #FFFFFF;
+  border: 2px solid #0A0E17;
+  font-size: 0.95rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rule-step-text {
+  font-size: 0.85rem;
+  color: #FFFFFF;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.rule-step-text strong {
+  color: #FFD60A;
+  font-size: 0.92rem;
+}
+
+.rule-api-box {
+  background: #1E2A45;
+  border: 3px solid #06D6A0;
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.rule-api-title {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #06D6A0;
+}
+
+.rule-api-desc {
+  font-size: 0.82rem;
+  color: #FFFFFF;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.rule-api-desc strong {
+  color: #FFD60A;
+}
+
+.rule-open-api-btn {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.rule-ok-btn {
+  width: 100%;
+  font-size: 1.15rem;
+  padding: 14px 24px;
+  flex-shrink: 0;
 }
 `;

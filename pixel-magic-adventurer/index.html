@@ -14,11 +14,11 @@
     <div id="app"></div>
     <script type="module" src="./src/main.js"></script>
 
-    <!-- Google AdSense (パズル画面では子供の誤タップ防止のため非表示に制御) -->
-    <div id="global-ad-container" style="position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; background-color: #0E1424; z-index: 999; padding: 4px 0; border-top: 3px solid #0A0E17;">
+    <!-- Google AdSense (パズル画面では子供の誤タップ防止のため非表示、それ以外はFlex配置で画面に被らない) -->
+    <div id="global-ad-container" style="flex-shrink: 0; width: 100%; text-align: center; background-color: #0E1424; z-index: 10; padding: 4px 0; border-top: 3px solid #0A0E17; overflow: hidden;">
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3224284690141567" crossorigin="anonymous"></script>
       <ins class="adsbygoogle"
-           style="display:inline-block;width:320px;height:50px"
+           style="display:inline-block;width:320px;height:50px;max-width:100%"
            data-ad-client="ca-pub-3224284690141567"
            data-ad-slot="4330564224"></ins>
       <script>

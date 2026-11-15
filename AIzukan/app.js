@@ -2,14 +2,19 @@
 
 import { initDB, saveItem, getAllItems, deleteItem, clearDB, exportDB, importDB } from './storage.js';
 import { appraiseImage } from './gemini.js';
+import { appraiseImageLocally } from './local_appraiser.js';
 
 // --- State ---
+const MODE_STORAGE_KEY = 'app_mode';
 let currentView = 'home';
 let cameraStream = null;
 let currentImageBlob = null;
 let currentImageBase64 = null;
 let currentAppraisalResult = null;
 let currentDetailId = null;
+let lastAppraisalMode = 'offline';
+let rerollCount = 0;
+let editingRarity = 3;
 
 // --- Elements ---
 const mainHeader = document.getElementById('main-header');
@@ -25,8 +30,42 @@ const views = {
     appraisal: document.getElementById('view-appraisal'),
     result: document.getElementById('view-result'),
     encyclopedia: document.getElementById('view-encyclopedia'),
-    detail: document.getElementById('view-detail') // Modal
+    detail: document.getElementById('view-detail'), // Modal
+    editCard: document.getElementById('view-edit-card') // Modal
 };
+
+// --- Mode Management ---
+function getAppMode() {
+    const saved = localStorage.getItem(MODE_STORAGE_KEY);
+    if (saved === 'offline' || saved === 'gemini') {
+        return saved;
+    }
+    return localStorage.getItem('gemini_api_key') ? 'gemini' : 'offline';
+}
+
+function setAppMode(mode) {
+    localStorage.setItem(MODE_STORAGE_KEY, mode);
+    updateModeUI();
+}
+
+function updateModeUI() {
+    const mode = getAppMode();
+    const hasKey = Boolean(localStorage.getItem('gemini_api_key'));
+
+    document.getElementById('btn-mode-offline').classList.toggle('active', mode === 'offline');
+    document.getElementById('btn-mode-gemini').classList.toggle('active', mode === 'gemini');
+    document.getElementById('btn-setting-mode-offline').classList.toggle('active', mode === 'offline');
+    document.getElementById('btn-setting-mode-gemini').classList.toggle('active', mode === 'gemini');
+
+    const noteEl = document.getElementById('home-mode-note');
+    if (mode === 'offline') {
+        noteEl.textContent = 'APIキーなしで すぐにあそべるよ！';
+    } else {
+        noteEl.textContent = hasKey
+            ? 'Gemini AIが しゃしんを みて かんていするよ！'
+            : 'せってい から APIキーを いれてね';
+    }
+}
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -44,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function navigateTo(viewId, title = "") {
     // Hide all normal views
     Object.keys(views).forEach(key => {
-        if (key !== 'detail') {
+        if (key !== 'detail' && key !== 'editCard') {
             views[key].classList.remove('active');
             views[key].classList.add('hidden');
         }
@@ -73,14 +112,39 @@ function navigateTo(viewId, title = "") {
 function setupEventListeners() {
     // Nav from Home
     document.getElementById('btn-start-camera').addEventListener('click', () => {
-        if (!localStorage.getItem('gemini_api_key')) {
-            showToast("⚠️設定からAPIキーを入力してね！");
+        const mode = getAppMode();
+        if (mode === 'gemini' && !localStorage.getItem('gemini_api_key')) {
+            showToast("⚠️ Gemini AIモードには APIキーが ひつようだよ！");
             navigateTo('settings', '設定');
             return;
         }
         navigateTo('camera');
         startCamera();
     });
+
+    // Mode Switchers (Home & Settings)
+    const selectOfflineMode = () => {
+        setAppMode('offline');
+        showToast('🔮 APIなしモードにしたよ！');
+    };
+
+    const selectGeminiMode = () => {
+        if (!localStorage.getItem('gemini_api_key')) {
+            showToast('⚠️ Gemini AIモードには APIキーが ひつようだよ！');
+            if (currentView !== 'settings') {
+                navigateTo('settings', '設定');
+            }
+            document.getElementById('input-api-key').focus();
+            return;
+        }
+        setAppMode('gemini');
+        showToast('✨ Gemini AIモードにしたよ！');
+    };
+
+    document.getElementById('btn-mode-offline').addEventListener('click', selectOfflineMode);
+    document.getElementById('btn-mode-gemini').addEventListener('click', selectGeminiMode);
+    document.getElementById('btn-setting-mode-offline').addEventListener('click', selectOfflineMode);
+    document.getElementById('btn-setting-mode-gemini').addEventListener('click', selectGeminiMode);
     
     document.getElementById('btn-open-encyclopedia').addEventListener('click', () => {
         navigateTo('encyclopedia', 'みんなの図鑑');
@@ -106,10 +170,12 @@ function setupEventListeners() {
         const key = document.getElementById('input-api-key').value.trim();
         if (key) {
             localStorage.setItem('gemini_api_key', key);
-            showToast('APIキーを保存しました！');
+            setAppMode('gemini');
+            showToast('APIキーを保存して Gemini AIモードにしました！');
         } else {
             localStorage.removeItem('gemini_api_key');
-            showToast('APIキーを削除しました。');
+            setAppMode('offline');
+            showToast('APIキーを削除し、APIなしモードにしました。');
         }
     });
 
@@ -170,6 +236,45 @@ function setupEventListeners() {
         startCamera();
     });
 
+    document.getElementById('btn-reroll-result').addEventListener('click', async () => {
+        if (!currentImageBase64) return;
+        rerollCount += 1;
+        const newResult = await appraiseImageLocally(currentImageBase64, rerollCount);
+        showResult(newResult, currentImageBase64);
+        showToast('🎲 べつの アイテムに かんていしたよ！');
+    });
+
+    document.getElementById('btn-edit-result').addEventListener('click', openEditCardModal);
+    document.getElementById('btn-close-edit').addEventListener('click', closeEditCardModal);
+    document.getElementById('edit-card-backdrop').addEventListener('click', closeEditCardModal);
+
+    document.querySelectorAll('.star-pick-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            editingRarity = parseInt(btn.dataset.star, 10) || 1;
+            updateStarPicker(editingRarity);
+        });
+    });
+
+    document.getElementById('btn-apply-edit').addEventListener('click', () => {
+        const nameInput = document.getElementById('edit-card-name').value.trim();
+        const descInput = document.getElementById('edit-card-desc').value.trim();
+
+        if (!nameInput) {
+            showToast('なまえを いれてね！');
+            return;
+        }
+
+        const updated = {
+            name: nameInput,
+            rarity: editingRarity,
+            description: descInput || 'キミが みつけた ふしぎな アイテム！'
+        };
+
+        showResult(updated, currentImageBase64);
+        closeEditCardModal();
+        showToast('✏️ カードを かきかえたよ！');
+    });
+
     document.getElementById('btn-save-encyclopedia').addEventListener('click', async () => {
         if (!currentAppraisalResult || !currentImageBase64) return;
         
@@ -209,6 +314,7 @@ function loadSettings() {
     if (key) {
         document.getElementById('input-api-key').value = key;
     }
+    updateModeUI();
 }
 
 // --- Camera Logic ---
@@ -271,53 +377,76 @@ function handleImageUpload(e) {
     if (file) {
         processImageBlob(file);
     }
+    e.target.value = '';
 }
 
 // --- Image Processing & API Call ---
 async function processImageBlob(blob) {
     currentImageBlob = blob;
-    
+    rerollCount = 0;
+
     // Stop camera
     stopCamera();
-    
+
     // Read blob to base64
     const reader = new FileReader();
     reader.onload = async () => {
         const base64Url = reader.result;
         currentImageBase64 = base64Url;
-        
+
+        const mode = getAppMode();
+        lastAppraisalMode = mode;
+
+        const appraisalTitleEl = document.getElementById('appraisal-title');
+        const appraisalSubEl = document.getElementById('appraisal-subtext');
+        if (mode === 'offline') {
+            appraisalTitleEl.innerHTML = 'いろと ひかりを かんてい中...<span class="dots"></span>';
+            appraisalSubEl.innerHTML = 'しゃしんの パワーを しらべているよ！<br>ドキドキ...';
+        } else {
+            appraisalTitleEl.innerHTML = 'AIが かんてい中...<span class="dots"></span>';
+            appraisalSubEl.innerHTML = 'どんなアイテムになるかな？<br>ドキドキ...';
+        }
+
         // Show Appraisal screen
         document.getElementById('preview-image').src = base64Url;
         navigateTo('appraisal');
-        
+
         // Prepare Base64 payload (strip prefix)
         const mimeType = blob.type || "image/jpeg";
         const base64Data = base64Url.split(',')[1];
         const apiKey = localStorage.getItem('gemini_api_key');
-        
+
         try {
-            // Fake animation delay (min 2 seconds) for UX
-            const [result] = await Promise.all([
-                appraiseImage(base64Data, mimeType, apiKey),
-                new Promise(resolve => setTimeout(resolve, 3000))
-            ]);
-            
+            let result;
+            if (mode === 'offline') {
+                [result] = await Promise.all([
+                    appraiseImageLocally(base64Url, rerollCount),
+                    new Promise(resolve => setTimeout(resolve, 1400))
+                ]);
+            } else {
+                // Fake animation delay (min 3 seconds) for UX
+                [result] = await Promise.all([
+                    appraiseImage(base64Data, mimeType, apiKey),
+                    new Promise(resolve => setTimeout(resolve, 3000))
+                ]);
+            }
+
             showResult(result, base64Url);
         } catch (error) {
             console.error("Appraisal Failed:", error);
-            
+            currentAppraisalResult = null;
+            document.getElementById('offline-result-tools').classList.add('hidden');
+            document.getElementById('btn-save-encyclopedia').classList.add('hidden');
+
             // Wait a tiny bit so the UI isn't locked, then show the message
             setTimeout(() => {
                 alert("APIエラー詳細:\n\n" + error.message);
-                
-                // Allow user to manually retry after reading
-                document.getElementById('view-appraisal').classList.add('hidden');
-                document.getElementById('view-result').classList.remove('hidden');
-                
-                // Set the result screen to show the error state
+
                 document.getElementById('result-name').textContent = "エラー！";
+                document.getElementById('result-rarity').textContent = "☆☆☆☆☆";
                 document.getElementById('result-desc').textContent = "鑑定に失敗しました。";
                 document.getElementById('result-image').src = base64Url;
+                navigateTo('result', 'エラー');
             }, 100);
         }
     };
@@ -326,28 +455,59 @@ async function processImageBlob(blob) {
 
 function showResult(result, imageUrl) {
     currentAppraisalResult = result;
-    
+
     const nameEl = document.getElementById('result-name');
     const rarityEl = document.getElementById('result-rarity');
     const descEl = document.getElementById('result-desc');
     const imgEl = document.getElementById('result-image');
-    
+
     nameEl.textContent = result.name;
     descEl.textContent = result.description;
     imgEl.src = imageUrl;
-    
+
     // Generate Stars
-    const stars = parseInt(result.rarity) || 1;
+    const stars = Math.max(1, Math.min(5, parseInt(result.rarity, 10) || 1));
     let starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
     rarityEl.textContent = starStr;
-    
+
     // Apply special styling for high rarity
     const card = document.getElementById('card-container');
     card.style.borderColor = stars >= 4 ? '#FFD700' : '#4ECDC4';
     card.style.boxShadow = stars >= 4 ? '0 0 30px rgba(255,215,0,0.6)' : 'var(--shadow-lg)';
     rarityEl.style.color = stars >= 4 ? '#FF8C00' : 'var(--accent-dark)';
-    
+
+    document.getElementById('btn-save-encyclopedia').classList.remove('hidden');
+    const offlineTools = document.getElementById('offline-result-tools');
+    if (lastAppraisalMode === 'offline') {
+        offlineTools.classList.remove('hidden');
+    } else {
+        offlineTools.classList.add('hidden');
+    }
+
     navigateTo('result', 'かんてい結果！');
+}
+
+function updateStarPicker(rarity) {
+    document.querySelectorAll('.star-pick-btn').forEach((btn) => {
+        const starVal = parseInt(btn.dataset.star, 10);
+        btn.classList.toggle('active', starVal <= rarity);
+    });
+}
+
+function openEditCardModal() {
+    if (!currentAppraisalResult) return;
+    document.getElementById('edit-card-name').value = currentAppraisalResult.name || '';
+    document.getElementById('edit-card-desc').value = currentAppraisalResult.description || '';
+    editingRarity = Math.max(1, Math.min(5, parseInt(currentAppraisalResult.rarity, 10) || 3));
+    updateStarPicker(editingRarity);
+
+    views.editCard.classList.remove('hidden');
+    setTimeout(() => views.editCard.classList.add('active'), 10);
+}
+
+function closeEditCardModal() {
+    views.editCard.classList.remove('active');
+    setTimeout(() => views.editCard.classList.add('hidden'), 300);
 }
 
 // --- Encyclopedia View ---

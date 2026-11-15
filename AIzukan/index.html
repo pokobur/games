@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"
         rel="stylesheet" />
 
-    <link rel="stylesheet" href="style.css?v=15">
+    <link rel="stylesheet" href="style.css?v=20">
 </head>
 
 <body>
@@ -50,6 +50,18 @@
                     </button>
                 </div>
 
+                <div class="mode-switcher-wrap">
+                    <div class="mode-switcher" role="group" aria-label="かんていモード">
+                        <button type="button" id="btn-mode-offline" class="mode-chip">
+                            🔮 APIなしモード
+                        </button>
+                        <button type="button" id="btn-mode-gemini" class="mode-chip">
+                            ✨ Gemini AI
+                        </button>
+                    </div>
+                    <p id="home-mode-note" class="mode-note">APIキーなしで すぐにあそべるよ！</p>
+                </div>
+
                 <button id="btn-open-settings" class="btn-text">
                     <span class="material-symbols-rounded">settings</span> 設定とデータ
                 </button>
@@ -66,8 +78,23 @@
         <section id="view-settings" class="view hidden">
             <div class="scroll-container">
                 <div class="settings-card">
-                    <h2>⚙️ 設定</h2>
-                    <p class="help-text">保護者の方へ：このアプリはGemini APIを使用します。APIキーを入力してください。</p>
+                    <h2>🎮 かんていモード</h2>
+                    <p class="help-text">遊び方を選べます。APIキーがない場合も「APIなしモード」でそのまま遊べます。</p>
+                    <div class="mode-option-list">
+                        <button type="button" id="btn-setting-mode-offline" class="mode-option-btn">
+                            <span class="mode-option-title">🔮 APIなしモード（おすすめ・登録不要）</span>
+                            <span class="mode-option-desc">写真の色や明るさから、ふしぎなアイテムを自動かんてい！名前を自分で書きかえることもできます。</span>
+                        </button>
+                        <button type="button" id="btn-setting-mode-gemini" class="mode-option-btn">
+                            <span class="mode-option-title">✨ Gemini AIモード（APIキー必要）</span>
+                            <span class="mode-option-desc">写真にうつっているモノをAIが読みとって、オリジナルのアイテムにします。</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h2>⚙️ Gemini API設定</h2>
+                    <p class="help-text">保護者の方へ：「Gemini AIモード」を使う場合はAPIキーを入力してください。（APIなしモードでは不要です）</p>
 
                     <div class="form-group">
                         <label for="input-api-key">Gemini API Key</label>
@@ -126,8 +153,8 @@
                     <img id="preview-image" src="" alt="Preview">
                     <div class="scan-line"></div>
                 </div>
-                <h2 class="loading-text">AIが かんてい中...<span class="dots"></span></h2>
-                <p class="loading-subtext">どんなアイテムになるかな？<br>ドキドキ...</p>
+                <h2 id="appraisal-title" class="loading-text">AIが かんてい中...<span class="dots"></span></h2>
+                <p id="appraisal-subtext" class="loading-subtext">どんなアイテムになるかな？<br>ドキドキ...</p>
             </div>
         </section>
 
@@ -153,6 +180,16 @@
                         <span class="material-symbols-rounded">star</span>
                         <span>ずかんに ほぞんする！</span>
                     </button>
+                    <div id="offline-result-tools" class="offline-result-tools hidden">
+                        <button type="button" id="btn-reroll-result" class="btn-outline btn-tool">
+                            <span class="material-symbols-rounded">casino</span>
+                            <span>べつの けっか</span>
+                        </button>
+                        <button type="button" id="btn-edit-result" class="btn-outline btn-tool">
+                            <span class="material-symbols-rounded">edit</span>
+                            <span>じぶんで かく</span>
+                        </button>
+                    </div>
                     <button id="btn-retry-camera" class="btn-secondary">
                         やりなおす
                     </button>
@@ -210,6 +247,41 @@
             </div>
         </section>
 
+        <!-- VIEW: Edit Card Modal (for API-free mode customization) -->
+        <section id="view-edit-card" class="view modal hidden">
+            <div class="modal-backdrop" id="edit-card-backdrop"></div>
+            <div class="modal-content edit-modal-content">
+                <button type="button" id="btn-close-edit" class="icon-btn close-btn"><span
+                        class="material-symbols-rounded">close</span></button>
+                <div class="edit-card-box">
+                    <h2 class="edit-modal-title">✏️ カードを じぶんで かく</h2>
+                    <div class="form-group">
+                        <label for="edit-card-name">アイテムの なまえ</label>
+                        <input type="text" id="edit-card-name" maxlength="24" placeholder="でんせつの つるぎ">
+                    </div>
+                    <div class="form-group">
+                        <label>レアど（ほしの かず）</label>
+                        <div id="edit-star-picker" class="star-picker" role="group" aria-label="レアど">
+                            <button type="button" class="star-pick-btn" data-star="1">★</button>
+                            <button type="button" class="star-pick-btn" data-star="2">★</button>
+                            <button type="button" class="star-pick-btn" data-star="3">★</button>
+                            <button type="button" class="star-pick-btn" data-star="4">★</button>
+                            <button type="button" class="star-pick-btn" data-star="5">★</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-card-desc">せつめい</label>
+                        <textarea id="edit-card-desc" rows="3" maxlength="70" placeholder="どんな パワーが あるのかな？"></textarea>
+                    </div>
+                    <div class="edit-modal-actions">
+                        <button type="button" id="btn-apply-edit" class="btn-primary">
+                            <span>けってい！</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Toast Notification -->
         <div id="toast" class="toast hidden">Message</div>
     </div>
@@ -220,15 +292,17 @@
     <!-- App Scripts -->
     <script type="module" src="storage.js?v=2"></script>
     <script type="module" src="gemini.js?v=16"></script>
-    <script type="module" src="app.js?v=16"></script>
+    <script type="module" src="local_appraiser.js?v=1"></script>
+    <script type="module" src="app.js?v=17"></script>
     <!-- Google AdSense -->
-    <div style="position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; background-color: #fceeb5; z-index: 9999; padding: 5px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);">
+    <div class="ad-banner">
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3224284690141567" crossorigin="anonymous"></script>
         <!-- game -->
         <ins class="adsbygoogle"
              style="display:inline-block;width:350px;height:50px"
              data-ad-client="ca-pub-3224284690141567"
-             data-ad-slot="4330564224"></ins>
+             data-ad-slot="4330564224"
+             data-full-width-responsive="false"></ins>
         <script>
              (adsbygoogle = window.adsbygoogle || []).push({});
         </script>

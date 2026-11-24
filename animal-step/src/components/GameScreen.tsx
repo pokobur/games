@@ -1,12 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
 import { useGame } from '../hooks/useGame';
 import { Board } from './Board';
 import { Hand } from './Hand';
 import { RulesModal } from './RulesModal';
-import { InstallModal } from './InstallModal';
-import { isStandalone, subscribeInstallPrompt } from '../utils/pwa';
+import { ConfirmModal } from './ConfirmModal';
 import type { AIDifficulty } from '../types/game';
+
+type ConfirmAction = 'undo' | 'restart' | 'menu';
+
+const CONFIRM_CONFIG: Record<ConfirmAction, { message: string; confirmLabel: string }> = {
+  undo: {
+    message: '1つまえの てに もどしますか？',
+    confirmLabel: 'まった！する',
+  },
+  restart: {
+    message: 'さいしょから やりなおしますか？',
+    confirmLabel: 'リスタートする',
+  },
+  menu: {
+    message: 'メニューに もどりますか？ いまの たいせんは おわります',
+    confirmLabel: 'メニューに もどる',
+  },
+};
 
 const DIFFICULTY_OPTIONS: { value: AIDifficulty; label: string; emoji: string; description: string }[] = [
   { value: 'weak', label: 'よわい', emoji: '🌱', description: '40%ランダムにうごくよ' },
@@ -50,17 +66,18 @@ export const GameScreen: React.FC = () => {
 
   const [selectedDifficulty, setSelectedDifficulty] = useState<AIDifficulty>('somewhat_weak');
   const [isRulesOpen, setIsRulesOpen] = useState(false);
-  const [isInstallOpen, setIsInstallOpen] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [canNativeInstall, setCanNativeInstall] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
 
-  useEffect(() => {
-    setIsInstalled(isStandalone());
-    const unsubscribe = subscribeInstallPrompt((canInstall) => {
-      setCanNativeInstall(canInstall);
-    });
-    return unsubscribe;
-  }, []);
+  const handleConfirmAction = () => {
+    if (confirmAction === 'undo') {
+      undo();
+    } else if (confirmAction === 'restart') {
+      resetGame();
+    } else if (confirmAction === 'menu') {
+      backToMenu();
+    }
+    setConfirmAction(null);
+  };
 
   // ======== SETUP MENU ========
   if (!isGameStarted) {
@@ -68,7 +85,7 @@ export const GameScreen: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-b from-[#e8f5e9] to-[#c8e6c9] flex flex-col items-center justify-center px-4 py-8 font-sans">
         {/* Title */}
         <div className="text-center mb-6">
-          <h1 className="text-5xl sm:text-6xl font-black text-[#2e7d32] tracking-wide drop-shadow-sm animate-bounce duration-1000">
+          <h1 className="text-4xl sm:text-5xl font-black text-[#2e7d32] tracking-wide drop-shadow-sm">
             🌳 どうぶつステップ 🌳
           </h1>
           <p className="text-base sm:text-lg text-[#558b2f] mt-3 font-semibold">
@@ -76,23 +93,13 @@ export const GameScreen: React.FC = () => {
           </p>
         </div>
 
-        {/* Action Buttons (Rules & Install) */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
-          <button
-            onClick={() => setIsRulesOpen(true)}
-            className="px-6 py-2.5 bg-white text-[#2e7d32] font-black rounded-full shadow-md border-2 border-[#a5d6a7] hover:bg-[#e8f5e9] active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <span>📖</span> ルールをみる
-          </button>
-          {!isInstalled && (
-            <button
-              onClick={() => setIsInstallOpen(true)}
-              className="px-6 py-2.5 bg-[#43a047] hover:bg-[#2e7d32] text-white font-black rounded-full shadow-md border-2 border-[#2e7d32] active:scale-95 transition-all flex items-center gap-2 cursor-pointer animate-pulse"
-            >
-              <span>📲</span> アプリを追加
-            </button>
-          )}
-        </div>
+        {/* Rule Button */}
+        <button
+          onClick={() => setIsRulesOpen(true)}
+          className="mb-8 px-6 py-2.5 bg-white text-[#2e7d32] font-black rounded-full shadow-md border-2 border-[#a5d6a7] hover:bg-[#e8f5e9] active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+        >
+          <span>📖</span> ルールをみる
+        </button>
 
         {/* Mode Selection Cards */}
         <div className="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
@@ -148,13 +155,6 @@ export const GameScreen: React.FC = () => {
 
         {/* Rules Modal */}
         <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
-
-        {/* Install PWA Modal */}
-        <InstallModal
-          isOpen={isInstallOpen}
-          onClose={() => setIsInstallOpen(false)}
-          canNativeInstall={canNativeInstall}
-        />
       </div>
     );
   }
@@ -174,11 +174,6 @@ export const GameScreen: React.FC = () => {
             VS コンピュータ（{DIFFICULTY_LABELS[difficulty]}）
           </p>
         )}
-        {mode === 'local' && (
-          <p className="text-xs sm:text-sm text-[#558b2f] mt-1 font-semibold">
-            2人たいせん
-          </p>
-        )}
       </div>
 
       {/* Control Panel (Replacing absolute top buttons for much better mobile layout) */}
@@ -190,7 +185,7 @@ export const GameScreen: React.FC = () => {
           <span>📖</span> ルール
         </button>
         <button
-          onClick={undo}
+          onClick={() => canUndo && setConfirmAction('undo')}
           disabled={!canUndo}
           className={clsx(
             "px-4 py-2 font-bold rounded-full shadow-sm text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center gap-1 border",
@@ -199,28 +194,20 @@ export const GameScreen: React.FC = () => {
               : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed active:scale-100"
           )}
         >
-          <span>↩️</span> 待った
+          <span>↩️</span> まった！
         </button>
         <button
-          onClick={resetGame}
+          onClick={() => setConfirmAction('restart')}
           className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold rounded-full shadow-sm text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center gap-1"
         >
-          <span>🔄</span> 最初から
+          <span>🔄</span> リスタート
         </button>
         <button
-          onClick={backToMenu}
+          onClick={() => setConfirmAction('menu')}
           className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-300 font-bold rounded-full shadow-sm text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center gap-1"
         >
           <span>🚪</span> メニュー
         </button>
-        {!isInstalled && (
-          <button
-            onClick={() => setIsInstallOpen(true)}
-            className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold rounded-full shadow-sm text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center gap-1"
-          >
-            <span>📲</span> アプリ
-          </button>
-        )}
       </div>
 
       <div className="w-full max-w-lg flex flex-col items-center gap-4 sm:gap-6 relative px-2 flex-1 justify-center">
@@ -271,11 +258,13 @@ export const GameScreen: React.FC = () => {
       {/* Rules Modal */}
       <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
 
-      {/* Install PWA Modal */}
-      <InstallModal
-        isOpen={isInstallOpen}
-        onClose={() => setIsInstallOpen(false)}
-        canNativeInstall={canNativeInstall}
+      {/* Confirm Action Modal */}
+      <ConfirmModal
+        isOpen={confirmAction !== null}
+        message={confirmAction ? CONFIRM_CONFIG[confirmAction].message : ''}
+        confirmLabel={confirmAction ? CONFIRM_CONFIG[confirmAction].confirmLabel : ''}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmAction(null)}
       />
 
       {/* Winner Overlay */}

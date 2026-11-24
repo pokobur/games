@@ -50,10 +50,13 @@ export const Hand: React.FC<HandProps> = ({
               key={piece.id}
               onClick={() => onPieceClick(piece.id)}
               className={clsx(
-                'w-12 h-12 flex items-center justify-center rounded-lg cursor-pointer text-3xl transition-all shadow-sm bg-white border border-gray-100',
+                'w-13 h-13 flex items-center justify-center rounded-xl cursor-pointer text-4xl leading-none transition-all shadow-sm border-2',
+                player === 1
+                  ? 'bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] border-[#c4b5fd]'
+                  : 'bg-gradient-to-br from-[#fff7ed] to-[#ffedd5] border-[#fdba74]',
                 {
                   'ring-4 ring-[#4dabf5] scale-110 shadow-md': selectedPieceId === piece.id,
-                  'hover:bg-gray-50 hover:shadow-md': selectedPieceId !== piece.id && isTurn,
+                  'hover:brightness-95 hover:shadow-md': selectedPieceId !== piece.id && isTurn,
                   'opacity-50 cursor-not-allowed': !isTurn,
                 }
               )}

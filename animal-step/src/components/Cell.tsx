@@ -71,14 +71,18 @@ export const Cell: React.FC<CellProps> = ({
       {piece && (
         <div
           className={clsx(
-            'relative w-[85%] h-[85%] rounded-xl flex flex-col items-center justify-center select-none transition-all duration-300 border-2 shadow-md',
+            'relative w-[88%] h-[88%] rounded-xl flex flex-col items-center justify-center select-none transition-all duration-300 shadow-md text-gray-800',
             {
               // Rotated 180 degrees for Player 2
               'rotate-180': piece.owner === 2,
               'scale-105 shadow-lg': isSelected,
-              // Styling for Promoted vs Normal pieces
-              'bg-gradient-to-br from-[#ffe082] to-[#ffb300] border-[#ff8f00] text-[#5d4037]': piece.isPromoted,
-              'bg-[#fffdd0] border-[#d2b48c] text-gray-800': !piece.isPromoted,
+              // Player-based background colors (maintained even when promoted)
+              'bg-gradient-to-br from-[#ede9fe] to-[#ddd6fe]': piece.owner === 1,
+              'bg-gradient-to-br from-[#ffedd5] to-[#fed7aa]': piece.owner === 2,
+              // Border styling: thick gold border when promoted, player color border otherwise
+              'border-4 border-[#eab308] ring-2 ring-[#fde047]/80': piece.isPromoted,
+              'border-2 border-[#a78bfa]': !piece.isPromoted && piece.owner === 1,
+              'border-2 border-[#fb923c]': !piece.isPromoted && piece.owner === 2,
             }
           )}
         >
@@ -91,8 +95,8 @@ export const Cell: React.FC<CellProps> = ({
                   {hasDot && (
                     <span
                       className={clsx(
-                        'w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.2)]',
-                        piece.isPromoted ? 'bg-[#d32f2f]' : 'bg-[#e65100]'
+                        'w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.3)] ring-1 ring-white/80',
+                        piece.isPromoted ? 'bg-[#dc2626]' : 'bg-[#e65100]'
                       )}
                     />
                   )}
@@ -102,7 +106,7 @@ export const Cell: React.FC<CellProps> = ({
           </div>
 
           {/* Animal Emoji */}
-          <div className="text-3.5xl sm:text-4.5xl md:text-5xl filter drop-shadow-sm">
+          <div className="text-2xl sm:text-3xl md:text-4xl leading-none filter drop-shadow-sm">
             {ANIMAL_EMOJIS[piece.type]}
           </div>
         </div>

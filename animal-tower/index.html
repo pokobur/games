@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#fff4dc">
+    <title>ぐらぐら どうぶつタワー</title>
+    <meta name="description" content="ゆびで うごかして、どうぶつを たかく つみあげよう！こどもむけの やさしい バランスゲーム。">
+
+    <!-- PWA & Mobile Web App Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="どうぶつタワー">
+
+    <!-- Manifest & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="js/matter.min.js"></script>
+    <script>
+        if (typeof Matter === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"><\/script>');
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google AdSense H5 Games Ads (Ad Placement API) -->
+    <script async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3224284690141567"
+      crossorigin="anonymous"
+      data-adbreak-test="on"></script>
+    <script>
+      window.adsbygoogle = window.adsbygoogle || [];
+      var adBreak = adConfig = function(o) { adsbygoogle.push(o); };
+    </script>
+</head>
+<body class="in-title">
+    <div id="app">
+        <!-- ===== ヘッダーバー ===== -->
+        <header id="hud">
+            <div class="hud-stats">
+                <div class="stat" title="つんだかず">🐾 <b id="hud-count">0</b><small>ひき</small></div>
+                <div class="stat" title="たかさ">📏 <b id="hud-height">0.0</b><small>cm</small></div>
+                <div class="stat" title="スコア">⭐ <b id="hud-score">0</b><small>てん</small></div>
+            </div>
+            <div class="hud-buttons">
+                <button id="btn-sound" class="icon-btn" aria-label="サウンドきりかえ">
+                    <i class="fa-solid fa-volume-high"></i><span>ON</span>
+                </button>
+                <button id="btn-ranking" class="icon-btn" aria-label="ランキング">🏆</button>
+                <button id="btn-home" class="icon-btn" aria-label="タイトルへ" title="タイトルへ">
+                    <i class="fa-solid fa-house"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- ===== ゲームキャンバス ===== -->
+        <main id="stage">
+            <canvas id="game"></canvas>
+
+            <!-- タイトル画面 -->
+            <section id="screen-title" class="overlay show">
+                <div class="panel title-panel">
+                    <div class="title-badge">🌴 どうぶつバランスパズル 🌴</div>
+                    <h1 class="logo">
+                        <span class="logo-sub">ぐらぐら</span>
+                        <span class="logo-main">どうぶつタワー</span>
+                    </h1>
+                    <div class="title-stage-art">
+                        <canvas id="title-animals" width="600" height="260"></canvas>
+                    </div>
+                    <div class="title-action-box">
+                        <button id="btn-start" class="big-btn start-pulse"><i class="fa-solid fa-play"></i> はじめる</button>
+                        <div class="title-btn-row">
+                            <button id="btn-rules-open" class="sub-btn"><i class="fa-solid fa-book-open"></i> あそびかた</button>
+                            <button id="btn-title-ranking" class="sub-btn">🏆 ランキング</button>
+                            <button id="btn-settings-open" class="sub-btn"><i class="fa-solid fa-gear"></i> せってい</button>
+                        </div>
+                    </div>
+                    <p class="best-line">さいこう きろく: ⭐ <b id="title-best">0</b> てん</p>
+                </div>
+            </section>
+
+            <!-- あそびかた（ルール一覧）モーダル -->
+            <section id="screen-rules" class="overlay modal">
+                <div class="panel rules-panel">
+                    <button class="close-btn" id="btn-rules-close" aria-label="とじる"><i class="fa-solid fa-xmark"></i></button>
+                    <h2 class="modal-title">📖 あそびかた</h2>
+                    <div class="rules-list">
+                        <div class="rule-card">
+                            <div class="rule-icon">🔄</div>
+                            <div class="rule-text">
+                                <b>1. くるっと かいてん</b>
+                                <p>したの「ひだり」「みぎ」ボタンで むきを きめよう！（ながおしで すこしずつ まわるよ）</p>
+                            </div>
+                        </div>
+                        <div class="rule-card">
+                            <div class="rule-icon">🐾</div>
+                            <div class="rule-text">
+                                <b>2. ゆびで うごかす</b>
+                                <p>がめんの うえを ゆびで なぞって、おとしたい ばしょを ねらおう！</p>
+                            </div>
+                        </div>
+                        <div class="rule-card">
+                            <div class="rule-icon">⬇️</div>
+                            <div class="rule-text">
+                                <b>3. はなすと ポトン！</b>
+                                <p>ゆびを はなすと どうぶつが ポトンと おちて つみあがるよ！</p>
+                            </div>
+                        </div>
+                        <div class="rule-card">
+                            <div class="rule-icon">⚠️</div>
+                            <div class="rule-text">
+                                <b>おちたら おしまい！</b>
+                                <p>1ぴきでも だいから おちたら ゲームはおしまい。きをつけて つみあげよう！</p>
+                            </div>
+                        </div>
+                        <div class="rule-card">
+                            <div class="rule-icon">🚩</div>
+                            <div class="rule-text">
+                                <b>めざせ てっぺん！</b>
+                                <p>タワーが てっぺんの はたに とどくと クリアボーナス ＋1,000てん！</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-rules-ok" class="big-btn ok-btn">わかった！</button>
+                </div>
+            </section>
+
+            <!-- 設定モーダル -->
+            <section id="screen-settings" class="overlay modal">
+                <div class="panel settings-panel">
+                    <button class="close-btn" id="btn-settings-close" aria-label="とじる"><i class="fa-solid fa-xmark"></i></button>
+                    <h2 class="modal-title">⚙️ せってい</h2>
+
+                    <div class="settings-group">
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <span><i class="fa-solid fa-volume-high"></i> こうかおん (SE)</span>
+                                <b id="val-se">70%</b>
+                            </div>
+                            <input type="range" id="slider-se" min="0" max="100" step="5" value="70">
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <span><i class="fa-solid fa-music"></i> BGMのおと</span>
+                                <b id="val-bgm">40%</b>
+                            </div>
+                            <input type="range" id="slider-bgm" min="0" max="100" step="5" value="40">
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <span><i class="fa-solid fa-cubes"></i> だいざの おおきさ</span>
+                            </div>
+                            <div class="btn-toggle-group" id="base-size-group">
+                                <button type="button" class="toggle-btn" data-size="190">ちいさめ</button>
+                                <button type="button" class="toggle-btn active" data-size="230">ふつう</button>
+                                <button type="button" class="toggle-btn" data-size="270">おおきめ</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="feedback-box">
+                        <div class="feedback-title"><i class="fa-solid fa-envelope"></i> ごいけん・ごようぼう</div>
+                        <p class="feedback-desc">「こんな どうぶつが ほしい！」「もっと こうして ほしい」など、おもったことを おしえてね。</p>
+                        <textarea id="feedback-text" rows="3" placeholder="ここにおもったことや、おねがいを かいてね"></textarea>
+                        <button type="button" id="btn-send-feedback" class="sub-btn feedback-send-btn">
+                            <i class="fa-solid fa-paper-plane"></i> おくる
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- リザルト画面 -->
+            <section id="screen-result" class="overlay">
+                <div class="panel result-panel">
+                    <h2 id="result-title" class="result-title">こんかいのキロク！</h2>
+                    <p id="result-sub" class="result-sub">また ちょうせん してね</p>
+                    <div class="result-stats">
+                        <div><span>🐾</span><b id="res-count">0</b><small>ひき</small></div>
+                        <div><span>📏</span><b id="res-height">0.0</b><small>cm</small></div>
+                        <div class="score"><span>⭐</span><b id="res-score">0</b><small>てん</small></div>
+                    </div>
+                    <p id="res-best" class="res-best"></p>
+                    <label class="name-field">
+                        <span>なまえ</span>
+                        <input id="res-name" type="text" maxlength="8" placeholder="なまえ（なくてもOK）" autocomplete="off">
+                    </label>
+                    <div class="result-buttons">
+                        <div class="action-row" id="action-row">
+                            <button id="btn-continue" class="big-btn continue-btn" style="display: none;">
+                                <i class="fa-solid fa-clapperboard"></i> コンティニュー
+                            </button>
+                            <button id="btn-retry" class="big-btn"><i class="fa-solid fa-rotate-right"></i> もういちど</button>
+                        </div>
+                        <div class="row">
+                            <button id="btn-share" class="sub-btn"><i class="fa-solid fa-share-nodes"></i> シェア</button>
+                            <button id="btn-result-ranking" class="sub-btn"><i class="fa-solid fa-trophy"></i> ランキング</button>
+                            <button id="btn-result-home" class="sub-btn"><i class="fa-solid fa-house"></i> タイトル</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ランキングモーダル -->
+            <section id="screen-ranking" class="overlay modal">
+                <div class="panel ranking-panel">
+                    <button class="close-btn" id="btn-ranking-close" aria-label="とじる"><i class="fa-solid fa-xmark"></i></button>
+                    <h2 class="ranking-title">🏆 ランキング</h2>
+                    <ol id="ranking-list" class="ranking-list"></ol>
+                    <p class="ranking-reset-note"><i class="fa-solid fa-calendar-days"></i> まいしゅう にちようび 0:00 に リセットされるよ</p>
+                </div>
+            </section>
+
+            <div id="toast" class="toast"></div>
+        </main>
+
+        <!-- ===== 操作コントロールバー（回転ボタンのみ） ===== -->
+        <footer id="controls">
+            <button id="btn-rot-left" class="ctrl-btn rot" aria-label="ひだりに まわす">
+                <i class="fa-solid fa-rotate-left"></i><span>ひだり</span>
+            </button>
+            <button id="btn-rot-right" class="ctrl-btn rot" aria-label="みぎに まわす">
+                <i class="fa-solid fa-rotate-right"></i><span>みぎ</span>
+            </button>
+        </footer>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/crayon.js"></script>
+    <script src="js/animals.js"></script>
+    <script src="js/background.js"></script>
+    <script src="js/share.js"></script>
+    <script src="js/pwa.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

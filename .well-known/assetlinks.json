@@ -1,0 +1,28 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "blog.plyo.jinrogm",
+      "sha256_cert_fingerprints": [
+        "D3:17:56:98:2F:2C:E6:45:E6:7D:88:54:EA:9B:07:0E:C2:3A:0B:11:7C:BE:E4:EB:85:A4:06:DF:E6:D9:35:49"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "game.plyo.dokidokisugoroku",
+      "sha256_cert_fingerprints": [
+        "10:8D:5A:9C:52:1A:D7:C5:52:D9:77:83:8A:72:15:24:49:98:54:8C:F3:19:A2:37:C9:01:56:7A:EF:10:3C:C4",
+        "27:D5:C9:46:53:FA:F5:FF:99:7F:59:AE:B0:C3:E8:33:E7:D5:F3:73:E5:5C:65:9C:FF:9D:F5:A3:31:0F:C5:6C",
+        "71:02:31:29:66:7E:F3:D8:26:86:79:64:BF:AC:18:C1:FC:50:B1:DC:67:52:D1:40:AF:A6:65:96:CA:AF:6D:42"
+      ]
+    }
+  }
+]

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>プライバシーポリシー｜ドキドキ！わなしかけすごろく</title>
+    <meta name="theme-color" content="#EFECE6" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+    <style>
+      :root {
+        --bg: #efece6;
+        --card: #faf8f5;
+        --ink: #3d3b38;
+        --accent: #7a9e7e;
+        --border: #d4a373;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 16px 48px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN',
+          'Yu Gothic', sans-serif;
+        line-height: 1.75;
+      }
+      .container {
+        max-width: 780px;
+        margin: 0 auto;
+        background: var(--card);
+        border: 3px solid var(--ink);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 6px 0 var(--ink);
+      }
+      header {
+        background: var(--accent);
+        color: #faf8f5;
+        padding: 20px 24px;
+        border-bottom: 3px solid var(--ink);
+      }
+      header h1 {
+        margin: 0 0 4px;
+        font-size: 1.35rem;
+      }
+      header p {
+        margin: 0;
+        font-size: 0.875rem;
+        opacity: 0.95;
+      }
+      main {
+        padding: 24px;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 24px 0 8px;
+        padding-left: 10px;
+        border-left: 5px solid var(--accent);
+      }
+      h2:first-child {
+        margin-top: 0;
+      }
+      ul {
+        padding-left: 20px;
+        margin: 8px 0;
+      }
+      .box {
+        background: #efece6;
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        padding: 14px 16px;
+        margin-top: 12px;
+        font-size: 0.92rem;
+      }
+      .back-link {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 18px;
+        border-radius: 14px;
+        background: var(--accent);
+        color: #faf8f5;
+        text-decoration: none;
+        font-weight: 700;
+        border: 2px solid var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>プライバシーポリシー</h1>
+        <p>ドキドキ！わなしかけすごろく（Web版 / Androidアプリ版：game.plyo.dokidokisugoroku）</p>
+      </header>
+      <main>
+        <h2>1. 取得・保存する情報</h2>
+        <p>本アプリでは、ゲームデータの保存・引き継ぎおよびアプリ内購入の処理のために以下の情報を取り扱います。</p>
+        <ul>
+          <li>
+            <strong>アカウント認証情報（Firebase Authentication）</strong>：
+            ゲスト利用時の匿名ユーザー識別子（UID）、および Google アカウントまたはメールアドレス連携時に提供されるメールアドレス・表示名・UID。
+          </li>
+          <li>
+            <strong>ゲーム内ウォレット・購入履歴データ（Cloud Firestore）</strong>：
+            所持コイン数、カードのかけら数、解放済みステージ・わなカード・アバター・スキン・盤面テーマ、対戦アイテム所持数、ガチャ回数、注文履歴（商品ID・決済プロバイダ種別・注文状態・セッションID／注文ID等）、およびコイン増減台帳。
+          </li>
+          <li>
+            <strong>端末内保存データ（localStorage）</strong>：
+            音量・自動ロール・CPU速度等のゲーム設定、参加プレイヤー名・アイコン設定、自作コースデータ、およびオフライン／同期補助用のウォレットキャッシュ。
+          </li>
+        </ul>
+
+        <h2>2. 決済に関する情報の取り扱い</h2>
+        <ul>
+          <li>
+            <strong>Webブラウザ版</strong>：決済代行会社（Stripe）のホスト型決済ページにて処理されます。クレジットカード番号等の機微な決済情報を当ゲームのサーバーで直接取得・保持することはありません。
+          </li>
+          <li>
+            <strong>Androidアプリ版（Google Play）</strong>：Google Play Billing（Digital Goods API / PaymentRequest および Google Play Developer API）を通じて処理されます。クレジットカード番号等の機微な決済情報を当ゲームのサーバーで保持することはありません。
+          </li>
+        </ul>
+
+        <h2>3. 利用している外部サービス</h2>
+        <ul>
+          <li>Google Firebase（Authentication / Cloud Firestore / Cloud Functions）</li>
+          <li>Stripe（Webブラウザ版決済）</li>
+          <li>Google Play Billing / Google Play Developer API（Androidアプリ版決済および購入検証）</li>
+          <li>Google Fonts（Webフォント配信）</li>
+        </ul>
+
+        <h2>4. 利用目的</h2>
+        <p>
+          上記の情報は、ゲームの進行・設定・自作コースの保存、ログイン連携によるデータ引き継ぎ、ガチャおよびアプリ内アイテム・有料商品の付与・復元・不正決済防止（返金やチャージバックに伴う権限取り消しを含む）の目的で利用します。
+        </p>
+
+        <h2>5. お問い合わせ窓口</h2>
+        <div class="box">
+          <strong>運営者：</strong>増田 悠人<br />
+          <strong>お問い合わせメールアドレス：</strong>find_info@plyo.blog
+        </div>
+
+    <h2>6. アカウントとデータの削除について</h2>
+    <p>アカウント連携をしている場合、運営者へのメール連絡により、アカウントと関連データの削除をリクエストできます。</p>
+    <ul>
+      <li><strong>削除の手順：</strong>連携しているメールアドレスから、お問い合わせメールアドレス（find_info@plyo.blog）宛に、件名を「アカウント削除希望」としてご連絡ください。本人確認のうえ、原則として14日以内に削除いたします。</li>
+      <li><strong>削除されるデータ：</strong>Firebase Authentication のアカウント情報（メールアドレス・表示名・UID）、および Cloud Firestore に保存されたゲーム内ウォレット・購入履歴データ。</li>
+      <li><strong>保持されるデータ：</strong>法令上の義務の履行や不正決済への対応のため、注文履歴の一部を削除後も最長1年間保持する場合があります。その場合も、それらの目的以外には利用しません。</li>
+      <li><strong>端末内データ：</strong>端末内に保存されたデータ（ゲーム設定・自作コース等）は、ブラウザのサイトデータを削除することで、ご自身で削除できます。</li>
+    </ul>
+
+        <a class="back-link" href="./">ゲームへもどる</a>
+      </main>
+    </div>
+  </body>
+</html>
